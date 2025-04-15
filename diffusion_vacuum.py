@@ -3,7 +3,7 @@ import numpy as np
 
 import sympy
 from sympy import Symbol, Number, Function
-
+import modulus.sym
 from modulus.sym.key import Key
 from modulus.sym.geometry.primitives_1d import Line1D
 from modulus.sym.domain import Domain
@@ -15,7 +15,7 @@ from modulus.sym.eq.pde import PDE
 from modulus.sym.hydra import to_absolute_path, instantiate_arch, ModulusConfig
 from modulus.sym.domain.constraint import PointwiseBoundaryConstraint, PointwiseInteriorConstraint
 from modulus.sym.eq.pdes.diffusion import Diffusion
-from modulus.sym.domain.parameterization import Parameterization
+from modulus.sym.geometry.parameterization import Parameterization
 
 
 # Setup of class with 1d NDE
@@ -82,20 +82,21 @@ def run(cfg: ModulusConfig) -> None:
                                            geometry=line,
                                            outvar={"u": 0},
                                            criteria=sympy.Eq(x, max_x),
-                                           batch_size=cfg.batch_size.bc_max)
+                                           batch_size=cfg.batch_size.bc_max,
+                                           parameterization=pr)
     ode_domain.add_constraint(bc_max_x, "bc_max")
 
     # Interior
     interior = PointwiseInteriorConstraint(nodes=nodes,
                                            geometry=line,
                                            outvar={"custom_pde": 0},
-                                           batch_size=cfg.batch_size.interior)
+                                           batch_size=cfg.batch_size.interior,
+                                           parameterization=pr)
     ode_domain.add_constraint(interior, "interior")
 
     # Add inferencer
     points = np.linspace(0, 1, 101).reshape(101, 1)
-    inferencer = PointwiseInferencer(nodes=nodes, invar={"x": points}, output_names=["u"], batch_size=1024, plotter=InferencerPlotter())
-    # could add ', "s0": np.full_like(points, 15.0)' to inferencer?
+    inferencer = PointwiseInferencer(nodes=nodes, invar={"x": points, "s0": np.full_like(points, 15.0)}, output_names=["u"], batch_size=1024, plotter=InferencerPlotter())
     ode_domain.add_inferencer(inferencer, "inf_data")
 
     # make solver
@@ -105,3 +106,4 @@ def run(cfg: ModulusConfig) -> None:
     slv.solve()
 
 if __name__ == '__main__':
+    run()
