@@ -16,6 +16,7 @@ from modulus.sym.hydra import to_absolute_path, instantiate_arch, ModulusConfig
 from modulus.sym.domain.constraint import PointwiseBoundaryConstraint, PointwiseInteriorConstraint
 from modulus.sym.eq.pdes.diffusion import Diffusion
 from modulus.sym.geometry.parameterization import Parameterization
+import itertools
 
 
 # Setup of class with 1d NDE
@@ -96,15 +97,31 @@ def run(cfg: ModulusConfig) -> None:
                                            parameterization=pr)
     ode_domain.add_constraint(interior, "interior")
 
-    # Add inferencer
-    points = np.linspace(0, 1, 101).reshape(101, 1)
-    inferencer = PointwiseInferencer(nodes=nodes, invar={
-        "x": points,
-        "s0": np.full_like(points, 15.0), #key baseline values for each paremeter to work off
-        "D": np.full_like(points, 1 / (3 * 1.5)),
-        "Sa": np.full_like(points, 0.005),
-        }, output_names=["u"], batch_size=1024, plotter=InferencerPlotter())
-    ode_domain.add_inferencer(inferencer, "inf_data")
+    # Add inferencers for all parameters
+    x_vals = np.linspace(0, 1, 101).reshape(-1, 1)
+
+    # Parameter values to sweep through
+    s0_vals = [10.0, 15.0, 20.0]
+    D_vals = [0.1, 0.5, 1.0]
+    Sa_vals = [0.001, 0.005, 0.01]
+
+    # Create all combinations of parameters
+    param_combos = list(itertools.product(s0_vals, D_vals, Sa_vals))
+
+    for i, (s0_val, D_val, Sa_val) in enumerate(param_combos):
+        inferencer = PointwiseInferencer(
+            nodes=nodes,
+            invar={
+                "x": x_vals,
+                "s0": np.full_like(x_vals, s0_val),
+                "D": np.full_like(x_vals, D_val),
+                "Sa": np.full_like(x_vals, Sa_val),
+            },
+            output_names=["u"],
+            batch_size=1024,
+            plotter=InferencerPlotter(),
+        )
+        ode_domain.add_inferencer(inferencer, name=f"inf_s0{s0_val}_D{D_val}_Sa{Sa_val}")
 
     # make solver
     slv = Solver(cfg, ode_domain)
