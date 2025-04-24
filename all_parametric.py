@@ -16,6 +16,7 @@ from modulus.sym.hydra import to_absolute_path, instantiate_arch, ModulusConfig
 from modulus.sym.domain.constraint import PointwiseBoundaryConstraint, PointwiseInteriorConstraint
 from modulus.sym.eq.pdes.diffusion import Diffusion
 from modulus.sym.geometry.parameterization import Parameterization
+from modulus.sym.domain.monitor import PointwiseMonitor
 import itertools
 import torch
 
