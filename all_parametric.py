@@ -147,7 +147,7 @@ def run(cfg: ModulusConfig) -> None:
             },
             output_names=["u"],
             metrics={
-                "l2_error_u": lambda var: torch.norm(var["u"] - torch.tensor(u_true_vals, dtype=var["u"].dtype), 2),
+                "l2_error_u": lambda var: torch.norm(var["u"] - torch.tensor(u_true_vals, dtype=var["u"].dtype, device=var["u"].device), 2),
             },
             nodes=nodes
         )
