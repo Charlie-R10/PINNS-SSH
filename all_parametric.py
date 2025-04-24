@@ -17,6 +17,7 @@ from modulus.sym.domain.constraint import PointwiseBoundaryConstraint, Pointwise
 from modulus.sym.eq.pdes.diffusion import Diffusion
 from modulus.sym.geometry.parameterization import Parameterization
 import itertools
+import torch
 
 
 # Setup of class with 1d NDE
@@ -122,6 +123,35 @@ def run(cfg: ModulusConfig) -> None:
             plotter=InferencerPlotter(),
         )
         ode_domain.add_inferencer(inferencer, name=f"inf_s0{s0_val}_D{D_val}_Sa{Sa_val}")
+
+        # Compute L and a_ex analytically for this combo
+        L_val = np.sqrt(D_val / Sa_val)
+        a = 1.0
+        a_ex = a + 0.7104 * 3 * D_val
+
+        # Create analytical solution at each x
+        u_true_vals = (
+            s0_val * L_val * (1 - np.exp(-2 * a_ex / L_val))
+            / (2 * D_val * (1 + np.exp(-2 * a_ex / L_val)))
+            * (np.cosh((x_vals - a) / L_val) / np.cosh(a_ex / L_val))
+        )
+
+        # Add monitor
+        monitor = PointwiseMonitor(
+            invar={
+                "x": x_vals,
+                "s0": np.full_like(x_vals, s0_val),
+                "D": np.full_like(x_vals, D_val),
+                "Sa": np.full_like(x_vals, Sa_val),
+            },
+            output_names=["u"],
+            metrics={
+                "l2_error_u": lambda var: torch.norm(var["u"] - torch.tensor(u_true_vals, dtype=var["u"].dtype), 2),
+            },
+            nodes=nodes,
+            name=f"monitor_s0{s0_val}_D{D_val}_Sa{Sa_val}"
+        )
+        ode_domain.add_monitor(monitor)
 
     # make solver
     slv = Solver(cfg, ode_domain)
