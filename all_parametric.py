@@ -149,8 +149,7 @@ def run(cfg: ModulusConfig) -> None:
             metrics={
                 "l2_error_u": lambda var: torch.norm(var["u"] - torch.tensor(u_true_vals, dtype=var["u"].dtype), 2),
             },
-            nodes=nodes,
-            name=f"monitor_s0{s0_val}_D{D_val}_Sa{Sa_val}"
+            nodes=nodes
         )
         ode_domain.add_monitor(monitor)
 
