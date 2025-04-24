@@ -149,7 +149,7 @@ def run(cfg: ModulusConfig) -> None:
             metrics={
                 "l2_error_u": lambda var: torch.norm(var["u"] - torch.tensor(u_true_vals, dtype=var["u"].dtype, device=var["u"].device), 2),
             },
-            nodes=nodes
+            nodes=nodes,
             print_stats=True,         # prints L2 every 100 steps
             frequencies={"l2_error_u": 100},
         )
