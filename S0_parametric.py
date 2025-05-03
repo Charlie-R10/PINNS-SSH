@@ -122,7 +122,7 @@ def run(cfg: ModulusConfig) -> None:
             batch_size=1024,
         )
 
-    ode_domain.add_validator(validator, f"validator_s0_{s0_val:.1f}")
+        ode_domain.add_validator(validator, f"validator_s0_{s0_val:.1f}")
 
     # make solver
     slv = Solver(cfg, ode_domain)
