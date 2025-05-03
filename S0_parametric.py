@@ -18,6 +18,7 @@ from modulus.sym.eq.pdes.diffusion import Diffusion
 from modulus.sym.geometry.parameterization import Parameterization
 
 
+
 # Setup of class with 1d NDE
 class NeutronDiffusionNonMult1D(PDE):
     def __init__(self, D, Sa):
@@ -98,6 +99,30 @@ def run(cfg: ModulusConfig) -> None:
     points = np.linspace(0, 1, 101).reshape(101, 1)
     inferencer = PointwiseInferencer(nodes=nodes, invar={"x": points, "s0": np.full_like(points, 15.0)}, output_names=["u"], batch_size=1024, plotter=InferencerPlotter())
     ode_domain.add_inferencer(inferencer, "inf_data")
+
+
+    # Add validator for analytical solution
+    # Calc analytical solution first
+    def analytical_solution(x, s0, D, a_ex):
+        L = math.sqrt(D / 0.005)  # or pass Sa as a variable if needed
+        numerator = np.sinh((a_ex - x) / L)
+        denominator = np.cosh(a_ex / L)
+        return (s0 * L / (2 * D)) * (numerator / denominator)
+
+    # Implement s0 validator
+    s0_values = np.linspace(8.0, 12.0, 9)
+    for s0_val in s0_values:
+        s0_array = np.full_like(points, s0_val)
+        u_true = analytical_solution(points.flatten(), s0_val, D, a_ex)
+
+        validator = PointwiseValidator(
+            nodes=nodes,
+            invar={"x": points, "s0": s0_array},
+            true_outvar={"u": u_true.reshape(-1, 1)},
+            batch_size=1024,
+        )
+
+    ode_domain.add_validator(validator, f"validator_s0_{s0_val:.1f}")
 
     # make solver
     slv = Solver(cfg, ode_domain)
