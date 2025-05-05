@@ -110,7 +110,7 @@ def run(cfg: ModulusConfig) -> None:
         return (s0 * L / (2 * D)) * (numerator / denominator)
 
     # Implement s0 validator
-    s0_values = np.linspace(8.0, 12.0, 9)
+    s0_values = np.arange(10, 20.01, 0.5)
     for s0_val in s0_values:
         s0_array = np.full_like(points, s0_val)
         u_true = analytical_solution(points.flatten(), s0_val, D, a_ex)
