@@ -15,7 +15,6 @@ from physicsnemo.sym.domain.inferencer import PointwiseInferencer
 from physicsnemo.sym.models.fully_connected import FullyConnectedArch
 from physicsnemo.sym.solver import Solver
 from physicsnemo.sym.node import Node
-from physicsnemo.sym.launch import launch
 from physicsnemo.sym.geometry.parameterization import Parameterization
 
 # Define custom PDE
