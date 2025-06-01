@@ -5,6 +5,7 @@ from sympy import Symbol, Function
 import physicsnemo.sym
 
 # PhysicsNeMo (Modulus) v25.03 imports
+from physicsnemo.sym.hydra import instantiate_arch, PhysicsNeMoConfig
 from physicsnemo.sym.key import Key
 from physicsnemo.sym.geometry.primitives_1d import Line1D
 from physicsnemo.sym.domain.domain import Domain
@@ -14,7 +15,6 @@ from physicsnemo.sym.domain.inferencer import PointwiseInferencer
 from physicsnemo.sym.models.fully_connected import FullyConnectedArch
 from physicsnemo.sym.solver import Solver
 from physicsnemo.sym.node import Node
-from physicsnemo.sym.config import ModulusConfig
 from physicsnemo.sym.launch import launch
 from physicsnemo.sym.geometry.parameterization import Parameterization
 
@@ -27,8 +27,8 @@ class NeutronDiffusionNonMult1D:
         coef = -1 / L_square
         self.equations = {"custom_pde": u.diff(x, 2) + coef * u}
 
-@launch(config_path="ode_conf", config_name="config")
-def run(cfg: ModulusConfig) -> None:
+@physicsnemo.sym.main(config_path="conf", config_name="config")
+def run(cfg: PhysicsNeMoConfig) -> None:
 
     D = 1 / (3 * 1.5)
     Sa = 0.005
