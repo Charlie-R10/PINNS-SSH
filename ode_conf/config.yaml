@@ -1,5 +1,5 @@
 defaults :
-  - physicsnemo_default
+  - modulus_default
   - arch:
       - fully_connected
   - scheduler: tf_exponential_lr
