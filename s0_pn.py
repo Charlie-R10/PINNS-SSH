@@ -87,7 +87,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     interior = PointwiseInteriorConstraint(
         nodes=nodes,
         geometry=line,
-        outvar={"custom_pde": 0},
+        outvar={"neutron_diffusion_equation": 0},
         batch_size=cfg.batch_size.interior,
         parameterization=pr
     )
