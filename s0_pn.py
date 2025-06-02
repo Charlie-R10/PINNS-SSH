@@ -27,7 +27,7 @@ class NDequation(PDE):
         L_square = D / Sa
         coef = -1 / L_square
         self.equations = {}
-        self.equations["neutron_diffusion_equation"] = {"custom_pde": u.diff(x, 2) + coef * u}
+        self.equations["neutron_diffusion_equation"] = u.diff(x, 2) + coef * u
 
 @physicsnemo.sym.main(config_path="conf", config_name="config")
 def run(cfg: PhysicsNeMoConfig) -> None:
