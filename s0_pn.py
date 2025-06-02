@@ -47,10 +47,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
         cfg=cfg.arch.fully_connected
     )
 
-    nodes = [
-        Node.from_eqs("custom_pde", ode.equations),
-        custom_net.make_node(name="ode_network")
-    ]
+    nodes = ode.make_nodes() + [custom_net.make_node(name="ode_network")]
 
     # Geometry setup
     a = 1.
