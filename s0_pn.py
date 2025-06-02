@@ -16,10 +16,11 @@ from physicsnemo.sym.models.fully_connected import FullyConnectedArch
 from physicsnemo.sym.solver import Solver
 from physicsnemo.sym.node import Node
 from physicsnemo.sym.geometry.parameterization import Parameterization
+from physicsnemo.sym.eq.pde import PDE
 
 # Define custom PDE
 
-name = "NDequation"
+class NDequation(PDE)
     def __init__(self, D, Sa):
         x = Symbol("x")
         u = Function("u")(x)
