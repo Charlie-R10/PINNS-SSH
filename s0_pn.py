@@ -44,7 +44,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     custom_net = FullyConnectedArch(
         input_keys=[Key("x"), Key("s0")],
         output_keys=[Key("u")],
-        config=cfg.arch.fully_connected
+        cfg=cfg.arch.fully_connected
     )
 
     nodes = [
