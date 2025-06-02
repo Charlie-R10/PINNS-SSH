@@ -20,7 +20,7 @@ from physicsnemo.sym.eq.pde import PDE
 
 # Define custom PDE
 
-class NDequation(PDE)
+class NDequation(PDE):
     def __init__(self, D, Sa):
         x = Symbol("x")
         u = Function("u")(x)
