@@ -18,13 +18,15 @@ from physicsnemo.sym.node import Node
 from physicsnemo.sym.geometry.parameterization import Parameterization
 
 # Define custom PDE
-class NeutronDiffusionNonMult1D:
+
+name = "NDequation"
     def __init__(self, D, Sa):
         x = Symbol("x")
         u = Function("u")(x)
         L_square = D / Sa
         coef = -1 / L_square
-        self.equations = {"custom_pde": u.diff(x, 2) + coef * u}
+        self.equations = {}
+        self.equations["neutron_diffusion_equation"] = {"custom_pde": u.diff(x, 2) + coef * u}
 
 @physicsnemo.sym.main(config_path="conf", config_name="config")
 def run(cfg: PhysicsNeMoConfig) -> None:
@@ -37,14 +39,14 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     L_square = D / Sa
     L = math.sqrt(L_square)
 
-    ode = NeutronDiffusionNonMult1D(D, Sa)
+    ode = NDequation(D, Sa)
     x = Symbol("x")
 
     # Create network
     custom_net = FullyConnectedArch(
         input_keys=[Key("x"), Key("s0")],
         output_keys=[Key("u")],
-        cfg=cfg.arch.fully_connected
+        #cfg=cfg.arch.fully_connected
     )
 
     nodes = ode.make_nodes() + [custom_net.make_node(name="ode_network")]
