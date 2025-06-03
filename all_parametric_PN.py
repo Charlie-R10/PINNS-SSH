@@ -1,27 +1,28 @@
 import math
 import numpy as np
-
 import sympy
-from sympy import Symbol, Number, Function
-import modulus.sym
-from modulus.sym.key import Key
-from modulus.sym.geometry.primitives_1d import Line1D
-from modulus.sym.domain import Domain
-from modulus.sym.solver import Solver
-from modulus.sym.domain.validator import PointwiseValidator
-from modulus.sym.domain.inferencer import PointwiseInferencer
-from modulus.sym.utils.io import InferencerPlotter
-from modulus.sym.eq.pde import PDE
-from modulus.sym.hydra import to_absolute_path, instantiate_arch, ModulusConfig
-from modulus.sym.domain.constraint import PointwiseBoundaryConstraint, PointwiseInteriorConstraint
-from modulus.sym.eq.pdes.diffusion import Diffusion
-from modulus.sym.geometry.parameterization import Parameterization
+from sympy import Symbol, Function
+import physicsnemo.sym
+
+# PhysicsNeMo v25.03 imports
+from physicsnemo.sym.hydra import instantiate_arch, PhysicsNeMoConfig
+from physicsnemo.sym.key import Key
+from physicsnemo.sym.geometry.primitives_1d import Line1D
+from physicsnemo.sym.domain.domain import Domain
+from physicsnemo.sym.domain.constraint import PointwiseBoundaryConstraint, PointwiseInteriorConstraint
+from physicsnemo.sym.domain.validator import PointwiseValidator
+from physicsnemo.sym.domain.inferencer import PointwiseInferencer
+from physicsnemo.sym.models.fully_connected import FullyConnectedArch
+from physicsnemo.sym.solver import Solver
+from physicsnemo.sym.node import Node
+from physicsnemo.sym.geometry.parameterization import Parameterization
+from physicsnemo.sym.eq.pde import PDE
 
 
 
-# Setup of class with 1d NDE
-class NeutronDiffusionNonMult1D(PDE):
-    def __init__(self, D, Sa):
+# Define custom PDE in class - use physics nemo PDE class as parent
+class NDequation(PDE):
+    def __init__(self):
         x = Symbol("x")
         D = Symbol("D")
         Sa = Symbol("Sa")
@@ -32,11 +33,10 @@ class NeutronDiffusionNonMult1D(PDE):
         L_square = D / Sa
         coef = -1/L_square
         self.equations = {}
-        # self.equations["fick"] = (0.25 * u - 0.5 * D * u.diff(x))
-        self.equations["custom_pde"] = (u.diff(x, 2) + coef * u)
+        self.equations["neutron_diffusion_equation"] = u.diff(x, 2) + coef * u
 
-@modulus.sym.main(config_path="ode_conf", config_name="config")
-def run(cfg: ModulusConfig) -> None:
+@physicsnemo.sym.main(config_path="conf", config_name="config")
+def run(cfg: PhysicsNeMoConfig) -> None:
 
     D_sym = Symbol("D")
     Sa_sym = Symbol("Sa")
@@ -50,7 +50,7 @@ def run(cfg: ModulusConfig) -> None:
     L_square = D / Sa
     L = math.sqrt(L_square)
 
-    ode = NeutronDiffusionNonMult1D(D, Sa)
+    ode = NDequation()
 
     x = Symbol("x")
 
@@ -95,7 +95,7 @@ def run(cfg: ModulusConfig) -> None:
     # Interior
     interior = PointwiseInteriorConstraint(nodes=nodes,
                                            geometry=line,
-                                           outvar={"custom_pde": 0},
+                                           outvar={"neutron_diffusion_equation": 0},
                                            batch_size=cfg.batch_size.interior,
                                            parameterization=pr)
     ode_domain.add_constraint(interior, "interior")
