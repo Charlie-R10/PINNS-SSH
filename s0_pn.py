@@ -46,8 +46,8 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     # Create network
     custom_net = FullyConnectedArch(
         input_keys=[Key("x"), Key("s0")],
-        output_keys=[Key("u")],
-        #cfg=cfg.arch.fully_connected
+        output_keys=[Key("u")]
+        #need to put config fully connected?
     )
 
     nodes = ode.make_nodes() + [custom_net.make_node(name="ode_network")]
