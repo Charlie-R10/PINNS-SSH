@@ -4,7 +4,7 @@ import sympy
 from sympy import Symbol, Function
 import physicsnemo.sym
 
-# PhysicsNeMo (Modulus) v25.03 imports
+# PhysicsNeMo v25.03 imports
 from physicsnemo.sym.hydra import instantiate_arch, PhysicsNeMoConfig
 from physicsnemo.sym.key import Key
 from physicsnemo.sym.geometry.primitives_1d import Line1D
@@ -18,8 +18,7 @@ from physicsnemo.sym.node import Node
 from physicsnemo.sym.geometry.parameterization import Parameterization
 from physicsnemo.sym.eq.pde import PDE
 
-# Define custom PDE
-
+# Define custom PDE in class - use physics nemo PDE class as parent
 class NDequation(PDE):
     def __init__(self, D, Sa):
         x = Symbol("x")
