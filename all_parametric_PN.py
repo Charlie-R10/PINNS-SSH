@@ -65,7 +65,6 @@ def run(cfg: PhysicsNeMoConfig) -> None:
 
     # Defining geometry as 1D line with extrapolated length 
     a = 1.
-    a_ex = a + 0.7104 * 3 * D
     min_x = 0
     max_x = a_ex # extrapolated length
 
