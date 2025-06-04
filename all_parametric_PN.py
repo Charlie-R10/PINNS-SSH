@@ -55,7 +55,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     x = Symbol("x")
 
     # Creating net
-    custom_net = instantiate_arch(
+    custom_net = FullyConnectedArch(
         input_keys=[Key("x"), Key("s0"), Key("D"), Key("Sa")], # All input keys parameterized
         output_keys=[Key("u")]
     )
