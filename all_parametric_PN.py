@@ -34,7 +34,8 @@ class NDequation(PDE):
         coef = -1/L_square
         self.equations = {}
         self.equations["neutron_diffusion_equation"] = u.diff(x, 2) + coef * u
-
+        
+# Config from physics nemo
 @physicsnemo.sym.main(config_path="conf", config_name="config")
 def run(cfg: PhysicsNeMoConfig) -> None:
 
@@ -59,10 +60,11 @@ def run(cfg: PhysicsNeMoConfig) -> None:
         input_keys=[Key("x"), Key("s0"), Key("D"), Key("Sa")], # All input keys parameterized
         output_keys=[Key("u")]
     )
-
+    
+    # Form nodes - one from ode and one from neural net
     nodes = ode.make_nodes() + [custom_net.make_node(name="ode_network")]
 
-    # Defining geometry
+    # Defining geometry as 1D line with extrapolated length 
     a = 1.
     a_ex = a + 0.7104 * 3 * D
     min_x = 0
@@ -71,7 +73,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     line = Line1D(min_x, max_x)
     ode_domain = Domain()
 
-# Boundary condition of analytical solution at LHS
+    # LHS boundary condition (uses analytical solution = 0 for loss)
     L_sym = sympy.sqrt(D_sym / Sa_sym)
     a_ex = a + 0.7104 * 3 * D_sym
     phi_0 = s0_sym * L_sym * (1 - sympy.exp(-2 * a_ex / L_sym)) / (2 * D_sym * (1 + sympy.exp(-2 * a_ex / L_sym)))
@@ -83,7 +85,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
                                            parameterization=pr) #only BC that contains S0, therefore only BC needs parameterizaion?
     ode_domain.add_constraint(bc_min_x, "bc_min")
 
-    # Boundary condition that u = 0 at RHS (max x)
+    # Boundary condition that phi = 0 at RHS (extrapolated length)
     bc_max_x = PointwiseBoundaryConstraint(nodes=nodes,
                                            geometry=line,
                                            outvar={"u": 0},
@@ -92,7 +94,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
                                            parameterization=pr)
     ode_domain.add_constraint(bc_max_x, "bc_max")
 
-    # Interior
+    # Interior loss function for neutron diffusion equation
     interior = PointwiseInteriorConstraint(nodes=nodes,
                                            geometry=line,
                                            outvar={"neutron_diffusion_equation": 0},
@@ -106,29 +108,28 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     ode_domain.add_inferencer(inferencer, "inf_data")
 
 
-    # Add validator for analytical solution
-    # Calc analytical solution first
-    def analytical_solution(x, s0, D, a_ex):
-        L = math.sqrt(D / 0.005)  # or pass Sa as a variable if needed
+    # Validator with calculated analytical solution (equation from Stacey)
+    # Function to calculate analytical solution with parameters as inputs
+    def analytical_solution(x, s0, D, a_ex, Sa):
+        L = math.sqrt(D / Sa) 
         numerator = np.sinh((a_ex - x) / L)
         denominator = np.cosh(a_ex / L)
         return (s0 * L / (2 * D)) * (numerator / denominator)
 
-    # Validator loop
-    for s0_val in s0_values:
+    # Validator loop for s0, D and Sa - 3 values each for now as validation parameters
+    for s0_val in [10, 15, 20]:
         for D_val in [0.1, 0.5, 1.0]:
             for Sa_val in [0.001, 0.005, 0.01]:
                 L_val = math.sqrt(D_val / Sa_val)
                 a_ex = a + 0.7104 * 3 * D_val
 
-                # Analytical Solution
-                u_true = (
-                    s0_val * L_val * (1 - np.exp(-2 * a_ex / L_val)) /
-                    (2 * D_val * (1 + np.exp(-2 * a_ex / L_val))) *
-                    (np.cosh((points - a) / L_val) / np.cosh(a_ex / L_val))
+                # Analytical Solution calculated from inputted values
+                analytical_solution(points.flatten(), s0_val, D_val, a_ex, Sa)
+                
+                # u_true = ( s0_val * L_val * (1 - np.exp(-2 * a_ex / L_val)) /(2 * D_val * (1 + np.exp(-2 * a_ex / L_val))) *(np.cosh((points - a) / L_val) / np.cosh(a_ex / L_val))
                 )
 
-                # Validator
+                # Validator to calculate error
                 validator = PointwiseValidator(
                     nodes=nodes,
                     invar={"x": points, "s0": np.full_like(points, s0_val), "D": np.full_like(points, D_val), "Sa": np.full_like(points, Sa_val)},
