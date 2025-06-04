@@ -127,7 +127,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
                 analytical_solution(points.flatten(), s0_val, D_val, a_ex, Sa)
                 
                 # u_true = ( s0_val * L_val * (1 - np.exp(-2 * a_ex / L_val)) /(2 * D_val * (1 + np.exp(-2 * a_ex / L_val))) *(np.cosh((points - a) / L_val) / np.cosh(a_ex / L_val))
-                )
+                
 
                 # Validator to calculate error
                 validator = PointwiseValidator(
