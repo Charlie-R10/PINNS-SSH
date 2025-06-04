@@ -66,6 +66,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     # Defining geometry as 1D line with extrapolated length 
     a = 1.
     min_x = 0
+    a_ex = a + 0.7104 * 3 * D_sym
     max_x = a_ex # extrapolated length
 
     line = Line1D(min_x, max_x)
@@ -73,7 +74,6 @@ def run(cfg: PhysicsNeMoConfig) -> None:
 
     # LHS boundary condition (uses analytical solution = 0 for loss)
     L_sym = sympy.sqrt(D_sym / Sa_sym)
-    a_ex = a + 0.7104 * 3 * D_sym
     phi_0 = s0_sym * L_sym * (1 - sympy.exp(-2 * a_ex / L_sym)) / (2 * D_sym * (1 + sympy.exp(-2 * a_ex / L_sym)))
     bc_min_x = PointwiseBoundaryConstraint(nodes=nodes,
                                            geometry=line,
@@ -122,7 +122,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
                 a_ex = a + 0.7104 * 3 * D_val
 
                 # Analytical Solution calculated from inputted values
-                analytical_solution(points.flatten(), s0_val, D_val, a_ex, Sa)
+                u_true = analytical_solution(points.flatten(), s0_val, D_val, a_ex, Sa)
                 
                 # u_true = ( s0_val * L_val * (1 - np.exp(-2 * a_ex / L_val)) /(2 * D_val * (1 + np.exp(-2 * a_ex / L_val))) *(np.cosh((points - a) / L_val) / np.cosh(a_ex / L_val))
                 
