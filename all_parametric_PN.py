@@ -30,7 +30,7 @@ class NDequation(PDE):
         u = Function("u")(*input_variables)
 
         # set equations
-        L_square = D_sym / Sa_sym
+        L_square = D / Sa
         coef = -1/L_square
         self.equations = {}
         self.equations["neutron_diffusion_equation"] = u.diff(x, 2) + coef * u
@@ -48,8 +48,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
         Sa_sym: (0.001, 0.01)
     }
     pr = Parameterization(param_ranges)
-    L_square = D / Sa
-    L = math.sqrt(L_square)
+    ]
 
     ode = NDequation()
 
