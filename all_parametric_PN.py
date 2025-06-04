@@ -1,7 +1,7 @@
 import math
 import numpy as np
 import sympy
-from sympy import Symbol, Function
+from sympy import Symbol, Function, Lambda
 import physicsnemo.sym
 
 # PhysicsNeMo v25.03 imports
