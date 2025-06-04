@@ -72,9 +72,11 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     line = Line1D(min_x, max_x)
     ode_domain = Domain()
 
-    # LHS boundary condition (uses analytical solution = 0 for loss)
+    # LHS boundary condition (uses analytical solution = 0 for loss) - symbolic expression with sympy lambda
     L_sym = sympy.sqrt(D_sym / Sa_sym)
-    phi_0 = s0_sym * L_sym * (1 - sympy.exp(-2 * a_ex / L_sym)) / (2 * D_sym * (1 + sympy.exp(-2 * a_ex / L_sym)))
+    phi_0_expr = s0_sym * L_sym * (1 - sympy.exp(-2 * a_ex / L_sym)) / (2 * D_sym * (1 + sympy.exp(-2 * a_ex / L_sym)))
+    phi_0 = sympy.Lambda((x, s0_sym, D_sym, Sa_sym), phi_0_expr)
+
     bc_min_x = PointwiseBoundaryConstraint(nodes=nodes,
                                            geometry=line,
                                            outvar={"u": phi_0},
