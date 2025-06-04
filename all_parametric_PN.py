@@ -48,7 +48,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
         Sa_sym: (0.001, 0.01)
     }
     pr = Parameterization(param_ranges)
-    ]
+    
 
     ode = NDequation()
 
