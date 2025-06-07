@@ -17,7 +17,7 @@ from physicsnemo.sym.solver import Solver
 from physicsnemo.sym.node import Node
 from physicsnemo.sym.geometry.parameterization import Parameterization
 from physicsnemo.sym.eq.pde import PDE
-from physicsnemo.sym.models.layers.fourier_net import FourierNetArch
+from physicsnemo.sym.models.fourier_net import FourierNetArch
 
 # Define custom PDE in class - use physics nemo PDE class as parent
 class NDequation(PDE):
