@@ -140,7 +140,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
 
     # Run solver
     solver = Solver(cfg, ode_domain)
-    solver.solve()
+    solver.solve(lbfgs=True)
 
 if __name__ == '__main__':
     run()
