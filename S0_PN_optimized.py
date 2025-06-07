@@ -17,7 +17,7 @@ from physicsnemo.sym.solver import Solver
 from physicsnemo.sym.node import Node
 from physicsnemo.sym.geometry.parameterization import Parameterization
 from physicsnemo.sym.eq.pde import PDE
-from physicsnemo.sym.models.layers.fourier_feature import FourierFeatureArch
+from physicsnemo.sym.models.layers.fourier_net import FourierNetArch
 
 # Define custom PDE in class - use physics nemo PDE class as parent
 class NDequation(PDE):
@@ -52,7 +52,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     x = Symbol("x")
 
     # Create network
-    custom_net = FourierFeatureArch(
+    custom_net = FourierNetArch(
       input_keys=[Key("x"), Key("s0")],
       output_keys=[Key("u")],
       frequencies=[1.0, 2.0, 4.0, 8.0],  # You can tune this
