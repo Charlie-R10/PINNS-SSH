@@ -102,8 +102,9 @@ def run(cfg: PhysicsNeMoConfig) -> None:
                                            parameterization=pr)
     ode_domain.add_constraint(interior, "interior")
 
+    points = np.linspace(0, 1, 101).reshape(101, 1)
+
     # Add inferencer - removed for now 
-    #points = np.linspace(0, 1, 101).reshape(101, 1)
     #inferencer = PointwiseInferencer(nodes=nodes, invar={"x": points, "s0": np.full_like(points, 15.0)}, output_names=["u"], batch_size=1024, plotter=InferencerPlotter())
     #ode_domain.add_inferencer(inferencer, "inf_data")
 
