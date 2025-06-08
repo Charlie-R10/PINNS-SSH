@@ -20,7 +20,7 @@ from physicsnemo.sym.eq.pde import PDE
 
 
 
-# Define custom PDE in class - use physics nemo PDE class as parent
+# Define custom PDE in class - uses physics nemo PDE class as parent
 class NDequation(PDE):
     def __init__(self):
         x = Symbol("x")
