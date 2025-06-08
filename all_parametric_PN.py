@@ -80,7 +80,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     bc_min_x = PointwiseBoundaryConstraint(nodes=nodes,
                                            geometry=line,
                                            outvar={"u": phi_0},
-                                           criteria=sympy.Eq(x, min_x),
+                                           criteria=sympy.Eq(x, 0), #puts minx as 0
                                            batch_size=cfg.batch_size.bc_min,
                                            parameterization=pr) #only BC that contains S0, therefore only BC needs parameterizaion?
     ode_domain.add_constraint(bc_min_x, "bc_min")
@@ -89,7 +89,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     bc_max_x = PointwiseBoundaryConstraint(nodes=nodes,
                                            geometry=line,
                                            outvar={"u": 0},
-                                           criteria=sympy.Eq(x, max_x),
+                                           criteria=sympy.Eq(x, 2.5), #puts max x as 2.5
                                            batch_size=cfg.batch_size.bc_max,
                                            parameterization=pr)
     ode_domain.add_constraint(bc_max_x, "bc_max")
