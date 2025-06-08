@@ -69,7 +69,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     a_ex = a + 0.7104 * 3 * D_sym
     max_x = a_ex # extrapolated length
 
-    line = Line1D(min_x, max_x)
+    line = Line1D(min_x, 2.5)
     ode_domain = Domain()
 
     # LHS boundary condition (uses analytical solution = 0 for loss)
@@ -102,10 +102,10 @@ def run(cfg: PhysicsNeMoConfig) -> None:
                                            parameterization=pr)
     ode_domain.add_constraint(interior, "interior")
 
-    # Add inferencer
-    points = np.linspace(0, 1, 101).reshape(101, 1)
-    inferencer = PointwiseInferencer(nodes=nodes, invar={"x": points, "s0": np.full_like(points, 15.0)}, output_names=["u"], batch_size=1024, plotter=InferencerPlotter())
-    ode_domain.add_inferencer(inferencer, "inf_data")
+    # Add inferencer - removed for now 
+    #points = np.linspace(0, 1, 101).reshape(101, 1)
+    #inferencer = PointwiseInferencer(nodes=nodes, invar={"x": points, "s0": np.full_like(points, 15.0)}, output_names=["u"], batch_size=1024, plotter=InferencerPlotter())
+    #ode_domain.add_inferencer(inferencer, "inf_data")
 
 
     # Validator with calculated analytical solution (equation from Stacey)
@@ -124,7 +124,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
                 a_ex = a + 0.7104 * 3 * D_val
 
                 # Analytical Solution calculated from inputted values
-                u_true = analytical_solution(points.flatten(), s0_val, D_val, a_ex, Sa)
+                u_true = analytical_solution(points.flatten(), s0_val, D_val, a_ex, Sa_val)
                 
                 # u_true = ( s0_val * L_val * (1 - np.exp(-2 * a_ex / L_val)) /(2 * D_val * (1 + np.exp(-2 * a_ex / L_val))) *(np.cosh((points - a) / L_val) / np.cosh(a_ex / L_val))
                 
