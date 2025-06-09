@@ -89,7 +89,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     bc_max_x = PointwiseBoundaryConstraint(nodes=nodes,
                                            geometry=line,
                                            outvar={"u": 0},
-                                           criteria=sympy.Eq(x, max_x), #puts max x as 2.5
+                                           criteria=sympy.Eq(x, a + 0.7104 * 3 * D_sym), 
                                            batch_size=cfg.batch_size.bc_max,
                                            parameterization=pr)
     ode_domain.add_constraint(bc_max_x, "bc_max")
