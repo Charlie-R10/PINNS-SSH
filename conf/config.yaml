@@ -23,12 +23,5 @@ batch_size:
  bc_max: 200
  interior: 2000
 
-optimizer_lbfgs:
-  name: lbfgs
-  max_iter: 500
-  tolerance_grad: 1e-6
-  history_size: 100
-  line_search_fn: strong_wolfe
-
 graph:
  func_arch: true
