@@ -57,10 +57,6 @@ def run(cfg: PhysicsNeMoConfig) -> None:
 
     # Creating net
 
-  cfg.custom.arch == "FourierNetArch":
-        flow_net = FourierNetArch(
-            input_keys=input_keys,
-            output_keys=output_keys
           
     custom_net = FourierNetArch(
       input_keys=[Key("x"), Key("s0"), Key("D"), Key("Sa")],
