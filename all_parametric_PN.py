@@ -69,7 +69,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     a_ex = a + 0.7104 * 3 * D_sym
     max_x = a_ex # extrapolated length
 
-    line = Line1D(min_x, 2.5)
+    line = Line1D(min_x, 3.2)
     ode_domain = Domain()
 
     # LHS boundary condition (uses analytical solution = 0 for loss)
@@ -89,7 +89,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     bc_max_x = PointwiseBoundaryConstraint(nodes=nodes,
                                            geometry=line,
                                            outvar={"u": 0},
-                                           criteria=sympy.Eq(x, 2.5), #puts max x as 2.5
+                                           criteria=sympy.Eq(x, D_sym), #puts max x as 2.5
                                            batch_size=cfg.batch_size.bc_max,
                                            parameterization=pr)
     ode_domain.add_constraint(bc_max_x, "bc_max")
