@@ -81,15 +81,16 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     bc_min_x = PointwiseBoundaryConstraint(nodes=nodes,
                                            geometry=line,
                                            outvar={"u": phi_0},
-                                           criteria=rhs_criteria
+                                           criteria=sympy.Eq(x, 0),
                                            batch_size=cfg.batch_size.bc_min,
                                            parameterization=pr) 
     ode_domain.add_constraint(bc_min_x, "bc_min")
 
     # Boundary condition that phi = 0 at RHS (extrapolated length)
     bc_max_x = PointwiseBoundaryConstraint(nodes=nodes,
-                                           invar={ "x": a + 0.7104*3*D_sym, "D": D_sym, "Sa": Sa_sym, "s0": s0_sym },
+                                           geometry=line,
                                            outvar={ "u": 0 },
+                                           criteria=rhs_criteria,
                                            batch_size=cfg.batch_size.bc_max,
                                            parameterization=pr)
     ode_domain.add_constraint(bc_max_x, "bc_max")
