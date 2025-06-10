@@ -69,7 +69,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     a_ex = a + 0.7104 * 3 * D_sym
     max_x = a_ex # extrapolated length
 
-    line = Line1D(min_x, 3.2)
+    line = Line1D(min_x, max_x)
     ode_domain = Domain()
 
     # LHS boundary condition (uses analytical solution = 0 for loss)
