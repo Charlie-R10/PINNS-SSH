@@ -74,9 +74,9 @@ def run(cfg: PhysicsNeMoConfig) -> None:
 
     # LHS boundary condition (uses analytical solution = 0 for loss)
     L_sym = sympy.sqrt(D / Sa_sym)
-    phi_0 = s0_sym * L_sym * (1 - sympy.exp(-2 * a_ex / L_sym)) / (2 * D * (1 + sympy.exp(-2 * a_ex / L_sym)))
-
-
+    numerator_phi0 = math.sinh((a_ex) / (2 * L))
+    denominator_phi0 = math.cosh(a_ex / (2 * L))
+    phi_0 = ((S0 * L) / (2 * D)) * (numerator_phi0 / denominator_phi0)
     bc_min_x = PointwiseBoundaryConstraint(nodes=nodes,
                                            geometry=line,
                                            outvar={"u": phi_0},
@@ -85,11 +85,11 @@ def run(cfg: PhysicsNeMoConfig) -> None:
                                            parameterization=pr) 
     ode_domain.add_constraint(bc_min_x, "bc_min")
 
-    # Boundary condition that phi = 0 at RHS (extrapolated length)
+    # Boundary condition that phi = 0 at a_ex/2 (extrapolated length/2)
     bc_max_x = PointwiseBoundaryConstraint(nodes=nodes,
                                            geometry=line,
                                            outvar={"u": 0},
-                                           criteria=sympy.Eq(x, max_x),
+                                           criteria=sympy.Eq(x, max_x/2),
                                            batch_size=cfg.batch_size.bc_max,
                                            parameterization=pr)
     ode_domain.add_constraint(bc_max_x, "bc_max")
@@ -109,8 +109,8 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     # Function to calculate analytical solution with parameters as inputs
     def analytical_solution(x, s0, D, a_ex, Sa):
         L = math.sqrt(D / Sa) 
-        numerator = np.sinh((a_ex - x) / L)
-        denominator = np.cosh(a_ex / L)
+        numerator = math.sinh((a_ex - 2*x) / (2 * L))
+        denominator = math.cosh(a_ex / (2 * L))
         return (s0 * L / (2 * D)) * (numerator / denominator)
 
     # Validator loop for s0, D and Sa - 3 values each for now as validation parameters
@@ -121,8 +121,6 @@ def run(cfg: PhysicsNeMoConfig) -> None:
 
                 # Analytical Solution calculated from inputted values
                 u_true = analytical_solution(points.flatten(), s0_val, D, a_ex, Sa_val)
-                
-                # u_true = ( s0_val * L_val * (1 - np.exp(-2 * a_ex / L_val)) /(2 * D_val * (1 + np.exp(-2 * a_ex / L_val))) *(np.cosh((points - a) / L_val) / np.cosh(a_ex / L_val))
                 
 
                 # Validator to calculate error
