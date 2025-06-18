@@ -29,6 +29,7 @@ class NDequation(PDE):
         u = Function("u")(*input_variables)
 
         # set equations
+        D = 1 / (3 * 1.5)
         L_square = D / Sa
         coef = -1/L_square
         self.equations = {}
