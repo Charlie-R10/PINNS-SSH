@@ -132,7 +132,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
                     true_outvar={"u": u_true.reshape(-1, 1)},
                     batch_size=1024)
 
-                ode_domain.add_validator(validator, f"validator_s0_{s0_val}_D_{D_val}_Sa_{Sa_val}")
+                ode_domain.add_validator(validator, f"validator_s0_{s0_val}_Sa_{Sa_val}")
 
     # make solver
     slv = Solver(cfg, ode_domain)
