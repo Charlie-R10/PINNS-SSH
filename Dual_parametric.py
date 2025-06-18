@@ -116,8 +116,8 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     # Validator loop for s0, D and Sa - 3 values each for now as validation parameters
     for s0_val in [10, 15, 20]:
           for Sa_val in [0.001, 0.005, 0.01]:
-                L_val = math.sqrt(D_val / Sa_val)
-                a_ex = a + 0.7104 * 3 * D_val
+                L_val = math.sqrt(D / Sa_val)
+                a_ex = a + 0.7104 * 3 * D
 
                 # Analytical Solution calculated from inputted values
                 u_true = analytical_solution(points.flatten(), s0_val, D, a_ex, Sa_val)
