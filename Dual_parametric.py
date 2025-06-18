@@ -74,9 +74,9 @@ def run(cfg: PhysicsNeMoConfig) -> None:
 
     # LHS boundary condition (uses analytical solution = 0 for loss)
     L_sym = sympy.sqrt(D / Sa_sym)
-    numerator_phi0 = math.sinh((a_ex) / (2 * L))
-    denominator_phi0 = math.cosh(a_ex / (2 * L))
-    phi_0 = ((S0 * L) / (2 * D)) * (numerator_phi0 / denominator_phi0)
+    numerator_phi0 = math.sinh((a_ex) / (2 * L_sym))
+    denominator_phi0 = math.cosh(a_ex / (2 * L_sym))
+    phi_0 = ((S0_sym * L_sym) / (2 * D)) * (numerator_phi0 / denominator_phi0)
     bc_min_x = PointwiseBoundaryConstraint(nodes=nodes,
                                            geometry=line,
                                            outvar={"u": phi_0},
