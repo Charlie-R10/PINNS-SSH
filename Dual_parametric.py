@@ -89,7 +89,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     bc_max_x = PointwiseInteriorConstraint(nodes=nodes,
                                            geometry=line,
                                            outvar={"u": 0},
-                                           criteria=lambda v: np.isclose(v["x"], max_x / 2, atol=1e-5)),
+                                           criteria=lambda v: np.isclose(v["x"], max_x / 2, atol=1e-5),
                                            batch_size=cfg.batch_size.bc_max,
                                            parameterization=pr)
     ode_domain.add_constraint(bc_max_x, "bc_max")
