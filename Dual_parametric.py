@@ -66,7 +66,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     a = 1.
     min_x = 0
     a_ex = a + 0.7104 * 3 * D
-    max_x = a_ex # extrapolated length
+    max_x = a_ex/2 # extrapolated length
 
 
     line = Line1D(min_x, max_x)
@@ -86,10 +86,10 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     ode_domain.add_constraint(bc_min_x, "bc_min")
 
     # Boundary condition that phi = 0 at a_ex/2 (extrapolated length/2)
-    bc_max_x = PointwiseInteriorConstraint(nodes=nodes,
+    bc_max_x = PointwiseBoundaryConstraint(nodes=nodes,
                                            geometry=line,
                                            outvar={"u": 0},
-                                           criteria=lambda v: np.isclose(v["x"], max_x / 2, atol=1e-5),
+                                           criteria=sympy.Eq(x, max_x),
                                            batch_size=cfg.batch_size.bc_max,
                                            parameterization=pr)
     ode_domain.add_constraint(bc_max_x, "bc_max")
