@@ -109,8 +109,8 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     # Function to calculate analytical solution with parameters as inputs
     def analytical_solution(x, s0, D, a_ex, Sa):
         L = math.sqrt(D / Sa) 
-        numerator = math.sinh((a_ex - 2*x) / (2 * L))
-        denominator = math.cosh(a_ex / (2 * L))
+        numerator = np.sinh((a_ex - 2*x) / (2 * L))
+        denominator = np.cosh(a_ex / (2 * L))
         return (s0 * L / (2 * D)) * (numerator / denominator)
 
     # Validator loop for s0, D and Sa - 3 values each for now as validation parameters
