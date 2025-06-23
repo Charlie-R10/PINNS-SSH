@@ -114,7 +114,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
         return (s0 * L / (2 * D)) * (numerator / denominator)
 
     # Validator loop for s0, D and Sa - 3 values each for now as validation parameters
-    for s0_val in [10, 15, 20]:
+    for s0_val in [10, 12, 15, 17, 20]:
           for Sa_val in [0.001, 0.005, 0.01]:
                 L_val = math.sqrt(D / Sa_val)
                 a_ex = a + 0.7104 * 3 * D
