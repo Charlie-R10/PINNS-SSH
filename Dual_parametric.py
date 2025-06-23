@@ -102,7 +102,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
                                            parameterization=pr)
     ode_domain.add_constraint(interior, "interior")
 
-    points = np.linspace(0, a_ex, 101).reshape(101, 1)
+    points = np.linspace(0, max_x, 101).reshape(101, 1)
 
 
     # Validator with calculated analytical solution (equation from Stacey)
