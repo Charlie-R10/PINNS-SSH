@@ -36,7 +36,7 @@ class NDequation(PDE):
         self.equations["neutron_diffusion_equation"] = u.diff(x, 2) + coef * u
         
 # Config from physics nemo
-@physicsnemo.sym.main(config_path="conf", config_name="config")
+@physicsnemo.sym.main(config_path="conf", config_name="config2")
 def run(cfg: PhysicsNeMoConfig) -> None:
 
     D = 1 / (3 * 1.5)
