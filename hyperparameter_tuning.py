@@ -54,9 +54,16 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     x = Symbol("x")
 
     # Creating net
+    width = cfg.hparams.width
+    depth = cfg.hparams.depth
+    activation = cfg.hparams.activation
+
     custom_net = FullyConnectedArch(
-        input_keys=[Key("x"), Key("s0"), Key("Sa")], # Parameterized input keys
-        output_keys=[Key("u")]
+        input_keys=[Key("x"), Key("s0"), Key("Sa")],
+        output_keys=[Key("u")],
+        layer_size=width,
+        nr_layers=depth,
+        activation_fn=activation
     )
     
     # Form nodes - one from ode and one from neural net
