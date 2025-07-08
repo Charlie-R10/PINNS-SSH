@@ -114,6 +114,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
         return (s0 * L / (2 * D)) * (numerator / denominator)
 
     # Validator loop for s0, D and Sa - 3 values each for now as validation parameters
+    i=0
     for s0_val in [10, 12, 15, 17, 20]:
           for Sa_val in [0.001, 0.005, 0.01]:
                 L_val = math.sqrt(D / Sa_val)
@@ -130,7 +131,8 @@ def run(cfg: PhysicsNeMoConfig) -> None:
                     true_outvar={"u": u_true.reshape(-1, 1)},
                     batch_size=1024)
 
-                ode_domain.add_validator(validator, f"validator_s0_{s0_val}_Sa_{Sa_val}")
+                ode_domain.add_validator(validator, f"validator_s0_{s0_val}_Sa_{i}")
+                i+=1
 
     # make solver
     slv = Solver(cfg, ode_domain)
