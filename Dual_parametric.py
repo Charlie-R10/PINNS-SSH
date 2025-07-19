@@ -43,8 +43,8 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     Sa_sym = Symbol("Sa")
     s0_sym = Symbol("s0")
     param_ranges = {
-        s0_sym: (10.0, 20.0),
-        Sa_sym: (0.001, 0.01)
+        s0_sym: (0, 1000000),
+        Sa_sym: (0, 1000)
     }
     pr = Parameterization(param_ranges)
     
@@ -115,8 +115,8 @@ def run(cfg: PhysicsNeMoConfig) -> None:
 
     # Validator loop for s0, D and Sa - 3 values each for now as validation parameters
     i=0
-    for s0_val in [10, 12, 15, 17, 20]:
-          for Sa_val in [0.001, 0.005, 0.01]:
+    for s0_val in [1000, 10000, 100000, 2000000, 5000000]:
+          for Sa_val in [100, 400, 800]:
                 L_val = math.sqrt(D / Sa_val)
                 a_ex = a + 0.7104 * 3 * D
 
