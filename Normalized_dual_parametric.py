@@ -22,7 +22,7 @@ class Normalizer:
         self.lo = lo
         self.hi = hi
         self.range = hi - lo + 1e-12
-n    
+        
     def norm(self, x):
         return (x - self.lo) / self.range
     
