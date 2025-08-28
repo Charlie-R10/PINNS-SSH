@@ -43,8 +43,8 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     Sa_sym = Symbol("Sa")
     s0_sym = Symbol("s0")
     param_ranges = {
-        s0_sym: (0, 100),
-        Sa_sym: (0, 50)
+        s0_sym: (0, 50),
+        Sa_sym: (0, 25)
     }
     pr = Parameterization(param_ranges)
     
