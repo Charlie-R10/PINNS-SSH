@@ -16,127 +16,157 @@ from physicsnemo.sym.solver import Solver
 from physicsnemo.sym.geometry.parameterization import Parameterization
 from physicsnemo.sym.eq.pde import PDE
 
-# Helper class for normalization
-class Normalizer:
-    def __init__(self, lo, hi):
-        self.lo = lo
-        self.hi = hi
-        self.range = hi - lo + 1e-12
-        
-    def norm(self, x):
-        return (x - self.lo) / self.range
-    
-    def unnorm(self, y):
-        return y * self.range + self.lo
 
-# Define custom PDE in class
+# Define custom PDE 
 class NDequation(PDE):
     def __init__(self):
         x = Symbol("x")
         Sa = Symbol("Sa")
-        u = Function("u")(x, Sa)
+        input_variables = {"x": x, "Sa": Sa}
+        u = Function("u")(*input_variables)
 
-        # diffusion coefficient
+        # set equations
         D = 1 / (3 * 1.5)
-        coef = -Sa / D  # u'' + coef * u = 0
-        self.equations = {"neutron_diffusion_equation": u.diff(x, 2) + coef * u}
+        L_square = D / Sa
+        coef = -1 / L_square
+        self.equations = {}
+        self.equations["neutron_diffusion_equation"] = u.diff(x, 2) + coef * u
 
+
+# Config from PhysicsNeMo
 @physicsnemo.sym.main(config_path="conf", config_name="config")
 def run(cfg: PhysicsNeMoConfig) -> None:
-    # Physical constants
+
     D = 1 / (3 * 1.5)
-    a = 1.0
-    a_ex = a + 0.7104 * 3 * D
-    max_x = a_ex / 2
-
-    # Define symbolic parameters
-    x_sym, s0_sym, Sa_sym = Symbol("x"), Symbol("s0"), Symbol("Sa")
-
-    # Real parameter bounds
-    s0_min, s0_max = 1e3, 5e6
-    Sa_min, Sa_max = 100, 1000
-    x_min, x_max = 0.0, max_x
-
-    # Create normalizers
-    s0_norm = Normalizer(s0_min, s0_max)
-    Sa_norm = Normalizer(Sa_min, Sa_max)
-    x_norm = Normalizer(x_min, x_max)
-
-    # Use normalized parameter ranges [0,1] in PhysicsNeMo
-    param_ranges = {s0_sym: (0, 1), Sa_sym: (0, 1)}
+    Sa_sym = Symbol("Sa")
+    s0_sym = Symbol("s0")
+    param_ranges = {
+        s0_sym: (0, 50),
+        Sa_sym: (0, 25)
+    }
     pr = Parameterization(param_ranges)
 
-    # Instantiate PDE and network
     ode = NDequation()
-    custom_net = FullyConnectedArch(
-        input_keys=[Key("x"), Key("s0"), Key("Sa")],
-        output_keys=[Key("u")]
-    )
-    nodes = ode.make_nodes() + [custom_net.make_node(name="ode_network")]
+    x = Symbol("x")
 
-    # Geometry and domain
-    line = Line1D(x_min, x_max)
+    # Geometry
+    a = 1.
+    min_x = 0
+    a_ex = a + 0.7104 * 3 * D
+    max_x = a_ex / 2
+    line = Line1D(min_x, max_x)
     ode_domain = Domain()
 
-    # Boundary constraints (symbolic outvar uses raw symbols, normalization handled by pr)
-    L_sym = sympy.sqrt(D / Sa_sym)
-    phi0 = ((s0_sym * L_sym) / (2 * D)) * (sympy.sinh(a_ex / (2 * L_sym)) / sympy.cosh(a_ex / (2 * L_sym)))
-    bc_min = PointwiseBoundaryConstraint(
-        nodes=nodes, geometry=line,
-        outvar={"u": phi0}, criteria=sympy.Eq(x_sym, x_min),
-        batch_size=cfg.batch_size.bc_min, parameterization=pr
+    # -------------------------
+    # Create neural network
+    # -------------------------
+    custom_net = FullyConnectedArch(
+        input_keys=[Key("x"), Key("s0"), Key("Sa")],
+        output_keys=[Key("u_tilde")]  # NN predicting normalized flux not normal
     )
-    bc_max = PointwiseBoundaryConstraint(
-        nodes=nodes, geometry=line,
-        outvar={"u": 0}, criteria=sympy.Eq(x_sym, x_max),
-        batch_size=cfg.batch_size.bc_max, parameterization=pr
-    )
-    ode_domain.add_constraint(bc_min, "bc_min")
-    ode_domain.add_constraint(bc_max, "bc_max")
 
-    # Interior PDE constraint
+    # Input transform (normalize inputs)
+    def input_transform(invar):
+        invar_new = {}
+        invar_new["x"] = invar["x"] / max_x         # map x → [0,1]
+        invar_new["s0"] = invar["s0"] / 50.0        # map s0 → [0,1]
+        invar_new["Sa"] = invar["Sa"] / 25.0        # map Sa → [0,1]
+        return invar_new
+
+    # Output transform (rescale back to dimensional)
+    def output_transform(invar, outvar):
+        D_val = 1 / (3 * 1.5)
+        Sa_val = invar["Sa"] * 25.0    # undo normalization - mapping
+        s0_val = invar["s0"] * 50.0
+        L_val = sympy.sqrt(D_val / Sa_val)
+        phi_ref = (s0_val * L_val) / (2 * D_val)
+        outvar_new = {}
+        outvar_new["u"] = outvar["u_tilde"] * phi_ref
+        return outvar_new
+
+    custom_net.input_transform = input_transform
+    custom_net.output_transform = output_transform
+
+    # Form nodes (PDE nodes + network node)
+    nodes = ode.make_nodes() + [custom_net.make_node(name="ode_network")]
+
+    # -------------------------
+    # Constraints
+    # -------------------------
+    L_sym = sympy.sqrt(D / Sa_sym)
+    numerator_phi0 = sympy.sinh((a_ex) / (2 * L_sym))
+    denominator_phi0 = sympy.cosh(a_ex / (2 * L_sym))
+    phi_0 = ((s0_sym * L_sym) / (2 * D)) * (numerator_phi0 / denominator_phi0)
+
+    # Boundary condition at x = 0
+    bc_min_x = PointwiseBoundaryConstraint(
+        nodes=nodes,
+        geometry=line,
+        outvar={"u": phi_0},
+        criteria=sympy.Eq(x, 0),
+        batch_size=cfg.batch_size.bc_min,
+        parameterization=pr
+    )
+    ode_domain.add_constraint(bc_min_x, "bc_min")
+
+    # Boundary condition at x = a_ex/2
+    bc_max_x = PointwiseBoundaryConstraint(
+        nodes=nodes,
+        geometry=line,
+        outvar={"u": 0},
+        criteria=sympy.Eq(x, max_x),
+        batch_size=cfg.batch_size.bc_max,
+        parameterization=pr
+    )
+    ode_domain.add_constraint(bc_max_x, "bc_max")
+
+    # Interior PDE residual
     interior = PointwiseInteriorConstraint(
-        nodes=nodes, geometry=line,
+        nodes=nodes,
+        geometry=line,
         outvar={"neutron_diffusion_equation": 0},
-        batch_size=cfg.batch_size.interior, parameterization=pr
+        batch_size=cfg.batch_size.interior,
+        parameterization=pr
     )
     ode_domain.add_constraint(interior, "interior")
 
-    # Define sample points and normalize
-    points = np.linspace(x_min, x_max, 101).reshape(-1, 1)
-    points_n = x_norm.norm(points)
+    # -------------------------
+    # Validators
+    # -------------------------
+    points = np.linspace(0, max_x, 101).reshape(101, 1)
 
-    # Analytical solution for validation
     def analytical_solution(x, s0, D, a_ex, Sa):
         L = math.sqrt(D / Sa)
-        return (s0 * L / (2 * D)) * (np.sinh((a_ex - 2*x) / (2*L)) / np.cosh(a_ex / (2*L)))
+        numerator = np.sinh((a_ex - 2 * x) / (2 * L))
+        denominator = np.cosh(a_ex / (2 * L))
+        return (s0 * L / (2 * D)) * (numerator / denominator)
 
-    # Validator loop over parameter values
     i = 0
-    for s0_val in [1e3, 1e4, 1e5, 2e6, 5e6]:
-        for Sa_val in [100, 400, 800]:
-            # Compute true solution and normalize
+    for s0_val in [10, 50, 100]:
+        for Sa_val in [10, 25, 50]:
+            L_val = math.sqrt(D / Sa_val)
+            a_ex = a + 0.7104 * 3 * D
+
             u_true = analytical_solution(points.flatten(), s0_val, D, a_ex, Sa_val)
-            u_max = np.max(np.abs(u_true)) + 1e-8
-            u_n = (u_true / u_max).reshape(-1, 1)
-            # Normalize inputs
-            s0_n = s0_norm.norm(s0_val)
-            Sa_n = Sa_norm.norm(Sa_val)
+
             validator = PointwiseValidator(
                 nodes=nodes,
-                invar={
-                    "x": points_n,
-                    "s0": np.full_like(points_n, s0_n),
-                    "Sa": np.full_like(points_n, Sa_n)
-                },
-                true_outvar={"u": u_n}, batch_size=1024
+                invar={"x": points,
+                       "s0": np.full_like(points, s0_val),
+                       "Sa": np.full_like(points, Sa_val)},
+                true_outvar={"u": u_true.reshape(-1, 1)},
+                batch_size=1024
             )
-            ode_domain.add_validator(validator, f"validator_{i}")
+            ode_domain.add_validator(validator, f"validator_s0_{s0_val}_Sa_{i}")
             i += 1
 
-    # Solve
+    # -------------------------
+    # Solver
+    # -------------------------
     slv = Solver(cfg, ode_domain)
     slv.solve()
 
+
 if __name__ == '__main__':
     run()
+
