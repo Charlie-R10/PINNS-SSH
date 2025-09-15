@@ -76,8 +76,8 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     # Output transform (rescale back to dimensional)
     def output_transform(invar, outvar):
         D_val = 1 / (3 * 1.5)
-        Sa_val = invar["Sa"] * 5    # undo normalization - mapping
-        s0_val = invar["s0"] * 5
+        Sa_val = invar["Sa"] * 20    # undo normalization - mapping
+        s0_val = invar["s0"] * 20
         L_val = sympy.sqrt(D_val / Sa_val)
         phi_ref = (s0_val * L_val) / (2 * D_val)
         outvar_new = {}
