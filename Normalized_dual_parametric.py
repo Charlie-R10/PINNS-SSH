@@ -87,6 +87,13 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     custom_net.input_transform = input_transform
     custom_net.output_transform = output_transform
 
+
+    # Check normalization working as it should
+    print("Check input normalization:")
+    sample = {"x": np.array([0.0, max_x]), "s0": np.array([0, 20]), "Sa": np.array([0, 20])}
+    print(input_transform(sample))
+
+
     # Form nodes (PDE nodes + network node)
     nodes = ode.make_nodes() + [custom_net.make_node(name="ode_network")]
 
