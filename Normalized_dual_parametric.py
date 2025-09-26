@@ -149,8 +149,8 @@ def run(cfg: PhysicsNeMoConfig) -> None:
         return (s0 * L / (2 * D)) * (numerator / denominator)
 
     i = 0
-    for s0_val in [2, 8, 15]:
-        for Sa_val in [2, 8, 15]:
+    for s0_val in [2, 7, 13, 18]:
+        for Sa_val in [2, 7, 13, 18]:
             L_val = math.sqrt(D / Sa_val)
             a_ex = a + 0.7104 * 3 * D
 
