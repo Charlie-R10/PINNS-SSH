@@ -41,8 +41,8 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     Sa_sym = Symbol("Sa")
     s0_sym = Symbol("s0")
     param_ranges = {
-        s0_sym: (0, 20),
-        Sa_sym: (0, 20)
+        s0_sym: (0, 10),
+        Sa_sym: (0, 10)
     }
     pr = Parameterization(param_ranges)
 
@@ -69,15 +69,15 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     def input_transform(invar):
         invar_new = {}
         invar_new["x"] = invar["x"] / max_x         # map x → [0,1]
-        invar_new["s0"] = invar["s0"] / 20        # map s0 → [0,1]
-        invar_new["Sa"] = invar["Sa"] / 20       # map Sa → [0,1]
+        invar_new["s0"] = invar["s0"] / 10        # map s0 → [0,1]
+        invar_new["Sa"] = invar["Sa"] / 10       # map Sa → [0,1]
         return invar_new
 
     # Output transform (rescale back to dimensional)
     def output_transform(invar, outvar):
         D_val = 1 / (3 * 1.5)
-        Sa_val = invar["Sa"] * 20    # undo normalization - mapping
-        s0_val = invar["s0"] * 20
+        Sa_val = invar["Sa"] * 10    # undo normalization - mapping
+        s0_val = invar["s0"] * 10
         L_val = sympy.sqrt(D_val / Sa_val)
         phi_ref = (s0_val * L_val) / (2 * D_val)
         outvar_new = {}
@@ -149,8 +149,8 @@ def run(cfg: PhysicsNeMoConfig) -> None:
         return (s0 * L / (2 * D)) * (numerator / denominator)
 
     i = 0
-    for s0_val in [2, 7, 13, 18]:
-        for Sa_val in [2, 7, 13, 18]:
+    for s0_val in [1, 4, 7, 9]:
+        for Sa_val in [1, 4, 7, 9]:
             L_val = math.sqrt(D / Sa_val)
             a_ex = a + 0.7104 * 3 * D
 
