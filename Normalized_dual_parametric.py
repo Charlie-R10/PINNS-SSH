@@ -41,8 +41,8 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     Sa_sym = Symbol("Sa")
     s0_sym = Symbol("s0")
     param_ranges = {
-        s0_sym: (0, 10),
-        Sa_sym: (0, 10)
+        s0_sym: (0, 4),
+        Sa_sym: (16, 20)
     }
     pr = Parameterization(param_ranges)
 
@@ -78,7 +78,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
         D_val = 1 / (3 * 1.5)
         Sa_val = invar["Sa"] * 4 + 16  # undo normalization - mapping
         s0_val = (invar["s0"]) * 4
-        L_val = sympy.sqrt(D_val / Sa_val)
+        L_val = math.sqrt(D_val / Sa_val)
         phi_ref = (s0_val * L_val) / (2 * D_val)
         outvar_new = {}
         outvar_new["u"] = outvar["u"] * phi_ref
