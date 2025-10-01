@@ -69,15 +69,15 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     def input_transform(invar):
         invar_new = {}
         invar_new["x"] = invar["x"] / max_x         # map x → [0,1]
-        invar_new["s0"] = invar["s0"] / 10        # map s0 → [0,1]
-        invar_new["Sa"] = invar["Sa"] / 10       # map Sa → [0,1]
+        invar_new["s0"] = invar["s0"] / 4        # map s0 → [0,1]
+        invar_new["Sa"] = (invar["Sa"] - 16)/ 4       # map Sa → [0,1]
         return invar_new
 
     # Output transform (rescale back to dimensional)
     def output_transform(invar, outvar):
         D_val = 1 / (3 * 1.5)
-        Sa_val = invar["Sa"] * 10    # undo normalization - mapping
-        s0_val = invar["s0"] * 10
+        Sa_val = invar["Sa"] * 4 + 16  # undo normalization - mapping
+        s0_val = (invar["s0"]) * 4
         L_val = sympy.sqrt(D_val / Sa_val)
         phi_ref = (s0_val * L_val) / (2 * D_val)
         outvar_new = {}
@@ -87,11 +87,6 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     custom_net.input_transform = input_transform
     custom_net.output_transform = output_transform
 
-
-    # Check normalization working as it should
-    print("Check input normalization:")
-    sample = {"x": np.array([0.0, max_x]), "s0": np.array([0, 20]), "Sa": np.array([0, 20])}
-    print(input_transform(sample))
 
 
     # Form nodes (PDE nodes + network node)
@@ -149,8 +144,8 @@ def run(cfg: PhysicsNeMoConfig) -> None:
         return (s0 * L / (2 * D)) * (numerator / denominator)
 
     i = 0
-    for s0_val in [1, 4, 7, 9]:
-        for Sa_val in [1, 4, 7, 9]:
+    for s0_val in [1, 2, 3]:
+        for Sa_val in [17, 18, 19]:
             L_val = math.sqrt(D / Sa_val)
             a_ex = a + 0.7104 * 3 * D
 
