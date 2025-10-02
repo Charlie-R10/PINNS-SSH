@@ -37,13 +37,13 @@ def run(cfg: PhysicsNeMoConfig) -> None:
 
     # define parameters for D and Sa (fixed)
     D = 1 / (3 * 1.5)
-    Sa = 0.005
+    Sa = 18
     L_square = D / Sa
     L = math.sqrt(L_square)
 
     # Create parametric range for S0
     s0_sym = Symbol("s0")
-    param_ranges = {s0_sym: (0, 100)}
+    param_ranges = {s0_sym: (0, 4)}
     pr = Parameterization(param_ranges) 
 
     # Create ode equation from above class
@@ -114,13 +114,13 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     # Validator with calculated analytical solution (equation from Stacey)
     # Function to calculate analytical solution with parameters as inputs
     def analytical_solution(x, s0, D, a_ex):
-        L = math.sqrt(D / 0.005)
+        L = math.sqrt(D / 18)
         numerator = np.sinh((a_ex - x) / L)
         denominator = np.cosh(a_ex / L)
         return (s0 * L / (2 * D)) * (numerator / denominator)
 
     # Range of s0 values as validators inside loop
-    s0_values = np.arange(1, 10, 50)
+    s0_values = np.arange(1, 2, 3)
     for s0_val in s0_values:
         s0_array = np.full_like(points, s0_val)
         u_true = analytical_solution(points.flatten(), s0_val, D, a_ex) # Uses function to calc analytical phi
