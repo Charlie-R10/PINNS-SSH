@@ -97,10 +97,31 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     )
     ode_domain.add_constraint(interior, "interior")
 
-    # Add inferencer
+    # Add validator
     points = np.linspace(0, 1, 101).reshape(101, 1)
-    inferencer = PointwiseInferencer(nodes=nodes, invar={"x": points}, output_names=["u"], batch_size=1024, plotter=InferencerPlotter())
-    ode_domain.add_inferencer(inferencer, "inf_data")
+    def analytical_solution_fixed(x, D, a_ex):
+        S0 = 1
+        Sa = 18
+        L = math.sqrt(D / Sa)
+        numerator = np.sinh((a_ex - 2 * x) / (2 * L))
+        denominator = np.cosh(a_ex / (2 * L))
+        return (S0 * L / (2 * D)) * (numerator / denominator)
+
+
+    u_true = analytical_solution_fixed(points.flatten(), D, a_ex)
+
+    validator = PointwiseValidator(
+        nodes=nodes,
+        invar={
+            "x": points,
+            "s0": np.full_like(points, 1.0),   # fixed S0
+            "Sa": np.full_like(points, 18.0),  # fixed Sa
+        },
+        true_outvar={"u": u_true.reshape(-1, 1)},
+        batch_size=1024
+    )
+
+    ode_domain.add_validator(validator, "validator_fixed_S0_1_Sa_18")
 
 
     # make solver
