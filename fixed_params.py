@@ -34,7 +34,7 @@ class NeutronDiffusionNonMult1D(PDE):
 
 # Config from PhysicsNeMo
 @physicsnemo.sym.main(config_path="conf", config_name="config")
-def run(cfg: ModulusConfig) -> None:
+def run(cfg: PhysicsNeMoConfig) -> None:
 
     D = 1 / (3 * 1.5)
     Sa = 18
