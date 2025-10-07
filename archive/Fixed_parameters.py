@@ -36,8 +36,8 @@ class NeutronDiffusionNonMult1D(PDE):
 def run(cfg: ModulusConfig) -> None:
 
     D = 1 / (3 * 1.5)
-    Sa = 0.005
-    S0 = 10.
+    Sa = 18
+    S0 = 1
     L_square = D / Sa
     L = math.sqrt(L_square)
 
