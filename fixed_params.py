@@ -64,7 +64,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     a = 1.0
     a_ex = a + 0.7104 * 3 * D
     min_x = 0.0
-    max_x = a_ex
+    max_x = a_ex/2
 
     line = Line1D(min_x, max_x)
     ode_domain = Domain()
@@ -107,11 +107,11 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     # Add validator: sample points across the actual domain [min_x, max_x]
     points = np.linspace(min_x, max_x, 101).reshape(101, 1)
 
-    def analytical_solution_fixed(x_array, D_val, a_ex_val):
+    def analytical_solution_fixed(x, D_val, a_ex_val):
         S0_loc = 1.0
         Sa_loc = 18.0
         L_loc = math.sqrt(D_val / Sa_loc)
-        numerator = np.sinh((a_ex_val - 2 * x_array) / (2 * L_loc))
+        numerator = np.sinh((a_ex_val - 2 * x) / (2 * L_loc))
         denominator = np.cosh(a_ex_val / (2 * L_loc))
         return (S0_loc * L_loc / (2 * D_val)) * (numerator / denominator)
 
