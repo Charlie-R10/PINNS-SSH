@@ -66,7 +66,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
 
     numerator_phi0 = np.sinh((a_ex) / (2 * L))
     denominator_phi0 = np.cosh(a_ex / (2 * L))
-    phi_0 = ((s0 * L) / (2 * D)) * (numerator_phi0 / denominator_phi0)
+    phi_0 = ((S0 * L) / (2 * D)) * (numerator_phi0 / denominator_phi0)
 
     # Boundary condition at x = 0
     bc_min_x = PointwiseBoundaryConstraint(
