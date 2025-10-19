@@ -4,8 +4,6 @@ import sympy
 from sympy import Symbol, Function
 import torch
 import torch.nn as nn
-
-
 import physicsnemo.sym
 
 # PhysicsNeMo v25.03 imports
@@ -31,7 +29,7 @@ class NeutronDiffusionNonMult1D(PDE):
         L_square = D / Sa
         coef = -1 / L_square
 
-        # IMPORTANT: use the same equation key that constraints will reference
+        # Defined PDE for neutron diffusion eq
         self.equations = {}
         self.equations["custom_pde"] = (u.diff(x, 2) + coef * u)
 
@@ -54,12 +52,11 @@ def run(cfg: PhysicsNeMoConfig) -> None:
 
     x = Symbol("x")
 
-    # Creating net
+    # Creating net from built in PhysicsNemo arch
     custom_net = instantiate_arch(
         input_keys=[Key("x")],
         output_keys=[Key("u")],
-        cfg=cfg.arch.fully_connected,
-        activation=nn.Softplus(),
+        cfg=cfg.arch.fully_connected
     )
 
     nodes = ode.make_nodes() + [custom_net.make_node(name="ode_network")]
@@ -78,7 +75,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     denominator_phi0 = np.cosh(a_ex / (2 * L))
     phi_0 = ((S0 * L) / (2 * D)) * (numerator_phi0 / denominator_phi0)
 
-    # Boundary condition at x = 0
+    # Boundary condition at x = 0 (analytical solution)
     bc_min_x = PointwiseBoundaryConstraint(
         nodes=nodes,
         geometry=line,
@@ -88,7 +85,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     )
     ode_domain.add_constraint(bc_min_x, "bc_min")
 
-    # Boundary condition at x = max_x (use sympy.Float)
+    # Extroplated boundary condition at x = max_x 
     bc_max_x = PointwiseBoundaryConstraint(
         nodes=nodes,
         geometry=line,
@@ -98,19 +95,19 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     )
     ode_domain.add_constraint(bc_max_x, "bc_max")
 
-    # Interior PDE residual
-    # NOTE: the key "custom_pde" must match the key in NeutronDiffusionNonMult1D.self.equations
+    # Interior PDE from custom PDE = 0 (neutron diffusion eq)
     interior = PointwiseInteriorConstraint(
         nodes=nodes,
         geometry=line,
-        outvar={"custom_pde": 0},   # <-- MATCHING KEY
+        outvar={"custom_pde": 0},   
         batch_size=cfg.batch_size.interior
     )
     ode_domain.add_constraint(interior, "interior")
 
-    # Add validator: sample points across the actual domain [min_x, max_x]
+    # Points across domain from x=0 to x=max_x
     points = np.linspace(min_x, max_x, 101).reshape(101, 1)
 
+    # Analytical solver for fixed parameters
     def analytical_solution_fixed(x, D_val, a_ex_val):
         S0_loc = 1.0
         Sa_loc = 18.0
@@ -121,6 +118,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
 
     u_true = analytical_solution_fixed(points.flatten(), D, a_ex)
 
+    # Validator node using analytical solution for fixed parameters
     validator = PointwiseValidator(
         nodes=nodes,
         invar={
@@ -133,13 +131,13 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     )
     ode_domain.add_validator(validator, "validator_fixed_S0_1_Sa_18")
 
-    # make solver
+    # make solver for model
     slv = Solver(cfg, ode_domain)
 
     # start solver
     slv.solve()
 
-
+# Run
 if __name__ == '__main__':
     run()
 
