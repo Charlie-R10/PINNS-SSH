@@ -2,6 +2,9 @@ import math
 import numpy as np
 import sympy
 from sympy import Symbol, Function
+import torch
+import torch.nn as nn
+
 
 import physicsnemo.sym
 
@@ -56,6 +59,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
         input_keys=[Key("x")],
         output_keys=[Key("u")],
         cfg=cfg.arch.fully_connected,
+        activation=nn.Softplus(),
     )
 
     nodes = ode.make_nodes() + [custom_net.make_node(name="ode_network")]
