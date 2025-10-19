@@ -11,7 +11,10 @@ from physicsnemo.sym.hydra import instantiate_arch, PhysicsNeMoConfig
 from physicsnemo.sym.key import Key
 from physicsnemo.sym.geometry.primitives_1d import Line1D
 from physicsnemo.sym.domain.domain import Domain
-from physicsnemo.sym.domain.constraint import PointwiseBoundaryConstraint, PointwiseInteriorConstraint
+from physicsnemo.sym.domain.constraint import (
+    PointwiseInteriorConstraint,
+    PointwiseConstraint  # ✅ use this instead of PointwiseBoundaryConstraint
+)
 from physicsnemo.sym.domain.validator import PointwiseValidator
 from physicsnemo.sym.models.fully_connected import FullyConnectedArch
 from physicsnemo.sym.solver import Solver
@@ -85,33 +88,30 @@ def run(cfg: PhysicsNeMoConfig) -> None:
         return 1.0 + 4.0 * x_norm  # up to ×5 weighting near RHS
 
     # ---------------------------------------
-    # Boundary Conditions (explicit points)
+    # Boundary Conditions (using PointwiseConstraint)
     # ---------------------------------------
     numerator_phi0 = np.sinh((a_ex) / (2 * L))
     denominator_phi0 = np.cosh(a_ex / (2 * L))
     phi_0 = ((S0 * L) / (2 * D)) * (numerator_phi0 / denominator_phi0)
 
-    # Explicit invars for 1D boundaries
     bc_min = {"x": np.array([[min_x]])}
     bc_max = {"x": np.array([[max_x]])}
 
     # BC at x = 0
-    bc_min_x = PointwiseBoundaryConstraint(
+    bc_min_x = PointwiseConstraint(
         nodes=nodes,
-        geometry=line,
-        outvar={"u": phi_0},
         invar=bc_min,
-        batch_size=cfg.batch_size.bc_min
+        outvar={"u": phi_0},
+        batch_size=cfg.batch_size.bc_min,
     )
     ode_domain.add_constraint(bc_min_x, "bc_min")
 
     # BC at x = max_x
-    bc_max_x = PointwiseBoundaryConstraint(
+    bc_max_x = PointwiseConstraint(
         nodes=nodes,
-        geometry=line,
-        outvar={"u": 0.0},
         invar=bc_max,
-        batch_size=cfg.batch_size.bc_max
+        outvar={"u": 0.0},
+        batch_size=cfg.batch_size.bc_max,
     )
     ode_domain.add_constraint(bc_max_x, "bc_max")
 
@@ -164,12 +164,11 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     # ---------------------------------------
     # Plot analytical vs predicted
     # ---------------------------------------
-    model = slv.domain.constraints["interior"].nodes[-1].evaluate
     x_test = np.linspace(min_x, max_x, 200).reshape(-1, 1)
     pred = slv.infer({"x": x_test})["u"]
 
     plt.figure(figsize=(7, 5))
-    plt.plot(x_test, u_true, label="Analytical", lw=2)
+    plt.plot(x_test, analytical_solution_fixed(x_test.flatten(), D, a_ex), label="Analytical", lw=2)
     plt.plot(x_test, pred, "--", label="PINN Prediction", lw=2)
     plt.yscale("log")
     plt.xlabel("x")
@@ -182,4 +181,5 @@ def run(cfg: PhysicsNeMoConfig) -> None:
 
 if __name__ == '__main__':
     run()
+
 
