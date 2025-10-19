@@ -2,6 +2,7 @@ import math
 import numpy as np
 import sympy
 from sympy import Symbol, Function
+import matplotlib.pyplot as plt
 
 import physicsnemo.sym
 
@@ -18,9 +19,9 @@ from physicsnemo.sym.geometry.parameterization import Parameterization
 from physicsnemo.sym.eq.pde import PDE
 
 
-# -------------------------------
+# ---------------------------------------
 # PDE Definition
-# -------------------------------
+# ---------------------------------------
 class NeutronDiffusionNonMult1D(PDE):
     def __init__(self, D, Sa):
         x = Symbol("x")
@@ -34,9 +35,9 @@ class NeutronDiffusionNonMult1D(PDE):
         self.equations["custom_pde"] = (u.diff(x, 2) + coef * u)
 
 
-# -------------------------------
+# ---------------------------------------
 # Solver Function
-# -------------------------------
+# ---------------------------------------
 @physicsnemo.sym.main(config_path="conf", config_name="config")
 def run(cfg: PhysicsNeMoConfig) -> None:
 
@@ -48,21 +49,21 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     L_square = D / Sa
     L = math.sqrt(L_square)
 
+    # Define PDE
     ode = NeutronDiffusionNonMult1D(D, Sa)
     x = Symbol("x")
 
-    # Network
+    # Define Network
     custom_net = instantiate_arch(
         input_keys=[Key("x")],
         output_keys=[Key("u")],
         cfg=cfg.arch.fully_connected,
     )
-
     nodes = ode.make_nodes() + [custom_net.make_node(name="ode_network")]
 
-    # -------------------------------
-    # Geometry setup (CHANGED SECTION)
-    # -------------------------------
+    # ---------------------------------------
+    # Geometry setup
+    # ---------------------------------------
     a = 1.0
     a_ex = a + 0.7104 * 3 * D
     min_x = 0.0
@@ -71,7 +72,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     line = Line1D(min_x, max_x, parameterization=Parameterization({"x": (0, 1)}))
     ode_domain = Domain()
 
-    # Custom sampling + weighting near RHS
+    # --- Custom sampling and weighting ---
     def rhs_bias_sampler(n):
         """Generate biased samples toward RHS (x^2 scaling)."""
         uniform = np.linspace(0, 1, n)
@@ -79,38 +80,44 @@ def run(cfg: PhysicsNeMoConfig) -> None:
         return min_x + (max_x - min_x) * biased
 
     def rhs_weight(invar):
-        """Increase PDE loss weight toward RHS."""
+        """Increase PDE loss weight toward the right-hand side."""
         x_norm = invar["x"] / max_x
-        return 1.0 + 4.0 * x_norm  # weight up to ×5 near RHS
+        return 1.0 + 4.0 * x_norm  # up to ×5 weighting near RHS
 
-    # -------------------------------
-    # Boundary Conditions
-    # -------------------------------
+    # ---------------------------------------
+    # Boundary Conditions (explicit points)
+    # ---------------------------------------
     numerator_phi0 = np.sinh((a_ex) / (2 * L))
     denominator_phi0 = np.cosh(a_ex / (2 * L))
     phi_0 = ((S0 * L) / (2 * D)) * (numerator_phi0 / denominator_phi0)
 
+    # Explicit invars for 1D boundaries
+    bc_min = {"x": np.array([[min_x]])}
+    bc_max = {"x": np.array([[max_x]])}
+
+    # BC at x = 0
     bc_min_x = PointwiseBoundaryConstraint(
         nodes=nodes,
         geometry=line,
         outvar={"u": phi_0},
-        criteria=sympy.Eq(x, sympy.Float(min_x)),
+        invar=bc_min,
         batch_size=cfg.batch_size.bc_min
     )
     ode_domain.add_constraint(bc_min_x, "bc_min")
 
+    # BC at x = max_x
     bc_max_x = PointwiseBoundaryConstraint(
         nodes=nodes,
         geometry=line,
         outvar={"u": 0.0},
-        criteria=sympy.Eq(x, sympy.Float(max_x)),
+        invar=bc_max,
         batch_size=cfg.batch_size.bc_max
     )
     ode_domain.add_constraint(bc_max_x, "bc_max")
 
-    # -------------------------------
-    # Interior PDE constraint (CHANGED SECTION)
-    # -------------------------------
+    # ---------------------------------------
+    # Interior PDE Constraint (biased sampling)
+    # ---------------------------------------
     interior = PointwiseInteriorConstraint(
         nodes=nodes,
         geometry=line,
@@ -121,9 +128,9 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     )
     ode_domain.add_constraint(interior, "interior")
 
-    # -------------------------------
-    # Validator
-    # -------------------------------
+    # ---------------------------------------
+    # Validator (for plotting / evaluation)
+    # ---------------------------------------
     points = np.linspace(min_x, max_x, 101).reshape(101, 1)
 
     def analytical_solution_fixed(x, D_val, a_ex_val):
@@ -148,12 +155,31 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     )
     ode_domain.add_validator(validator, "validator_fixed_S0_1_Sa_18")
 
-    # -------------------------------
+    # ---------------------------------------
     # Solver
-    # -------------------------------
+    # ---------------------------------------
     slv = Solver(cfg, ode_domain)
     slv.solve()
+
+    # ---------------------------------------
+    # Plot analytical vs predicted
+    # ---------------------------------------
+    model = slv.domain.constraints["interior"].nodes[-1].evaluate
+    x_test = np.linspace(min_x, max_x, 200).reshape(-1, 1)
+    pred = slv.infer({"x": x_test})["u"]
+
+    plt.figure(figsize=(7, 5))
+    plt.plot(x_test, u_true, label="Analytical", lw=2)
+    plt.plot(x_test, pred, "--", label="PINN Prediction", lw=2)
+    plt.yscale("log")
+    plt.xlabel("x")
+    plt.ylabel(r"$\phi(x)$")
+    plt.title(r"Neutron Flux $\phi(x)$ (Log Scale)")
+    plt.legend()
+    plt.grid(True)
+    plt.show()
 
 
 if __name__ == '__main__':
     run()
+
