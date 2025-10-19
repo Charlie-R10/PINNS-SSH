@@ -68,7 +68,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     min_x = 0.0
     max_x = a_ex / 2
 
-    line = Line1D(min_x, max_x, parameterization=Parameterization({"x": [0, 1]}))
+    line = Line1D(min_x, max_x, parameterization=Parameterization({"x": (0, 1)}))
     ode_domain = Domain()
 
     # Custom sampling + weighting near RHS
