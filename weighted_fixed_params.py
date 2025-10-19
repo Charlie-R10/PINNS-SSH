@@ -13,7 +13,7 @@ from physicsnemo.sym.geometry.primitives_1d import Line1D
 from physicsnemo.sym.domain.domain import Domain
 from physicsnemo.sym.domain.constraint import (
     PointwiseInteriorConstraint,
-    PointwiseConstraint  # ✅ use this instead of PointwiseBoundaryConstraint
+    PointwiseBoundaryConstraint
 )
 from physicsnemo.sym.domain.validator import PointwiseValidator
 from physicsnemo.sym.models.fully_connected import FullyConnectedArch
@@ -72,59 +72,52 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     min_x = 0.0
     max_x = a_ex / 2
 
+    # must use tuple not list
     line = Line1D(min_x, max_x, parameterization=Parameterization({"x": (0, 1)}))
     ode_domain = Domain()
 
-    # --- Custom sampling and weighting ---
-    def rhs_bias_sampler(n):
-        """Generate biased samples toward RHS (x^2 scaling)."""
-        uniform = np.linspace(0, 1, n)
-        biased = uniform**2
-        return min_x + (max_x - min_x) * biased
-
+    # --- RHS-biased loss weighting ---
     def rhs_weight(invar):
-        """Increase PDE loss weight toward the right-hand side."""
+        """Increase PDE loss weight toward RHS."""
         x_norm = invar["x"] / max_x
-        return 1.0 + 4.0 * x_norm  # up to ×5 weighting near RHS
+        return 1.0 + 4.0 * x_norm  # up to 5× weight near RHS
 
     # ---------------------------------------
-    # Boundary Conditions (using PointwiseConstraint)
+    # Boundary Conditions (correct style)
     # ---------------------------------------
     numerator_phi0 = np.sinh((a_ex) / (2 * L))
     denominator_phi0 = np.cosh(a_ex / (2 * L))
     phi_0 = ((S0 * L) / (2 * D)) * (numerator_phi0 / denominator_phi0)
 
-    bc_min = {"x": np.array([[min_x]])}
-    bc_max = {"x": np.array([[max_x]])}
-
     # BC at x = 0
-    bc_min_x = PointwiseConstraint(
+    bc_min_x = PointwiseBoundaryConstraint(
         nodes=nodes,
-        invar=bc_min,
+        geometry=line,
         outvar={"u": phi_0},
+        criteria=sympy.Eq(x, sympy.Float(min_x)),
         batch_size=cfg.batch_size.bc_min,
     )
     ode_domain.add_constraint(bc_min_x, "bc_min")
 
     # BC at x = max_x
-    bc_max_x = PointwiseConstraint(
+    bc_max_x = PointwiseBoundaryConstraint(
         nodes=nodes,
-        invar=bc_max,
+        geometry=line,
         outvar={"u": 0.0},
+        criteria=sympy.Eq(x, sympy.Float(max_x)),
         batch_size=cfg.batch_size.bc_max,
     )
     ode_domain.add_constraint(bc_max_x, "bc_max")
 
     # ---------------------------------------
-    # Interior PDE Constraint (biased sampling)
+    # Interior PDE Constraint (with weighting)
     # ---------------------------------------
     interior = PointwiseInteriorConstraint(
         nodes=nodes,
         geometry=line,
         outvar={"custom_pde": 0},
         batch_size=cfg.batch_size.interior,
-        loss_weight_fn=rhs_weight,  # emphasize RHS
-        invar_fn=lambda n: {"x": rhs_bias_sampler(n).reshape(-1, 1)}  # biased sampling
+        loss_weight_fn=rhs_weight,  # emphasize RHS region
     )
     ode_domain.add_constraint(interior, "interior")
 
@@ -151,7 +144,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
             "Sa": np.full_like(points, Sa),
         },
         true_outvar={"u": u_true.reshape(-1, 1)},
-        batch_size=1024
+        batch_size=1024,
     )
     ode_domain.add_validator(validator, "validator_fixed_S0_1_Sa_18")
 
@@ -181,5 +174,3 @@ def run(cfg: PhysicsNeMoConfig) -> None:
 
 if __name__ == '__main__':
     run()
-
-
