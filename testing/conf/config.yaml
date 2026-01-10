@@ -7,20 +7,24 @@ defaults :
   - loss: sum
   - _self_
 
+arch:
+  fully_connected:
+    activation_fn: tanh
+    layer_size: 1024
+    nr_layers: 1
+
+optimizer:
+  lr: 0.0001
+
 scheduler:
-  decay_rate: 0.9
-  decay_steps: 5000
+  decay_rate: 0.95
+  decay_steps: 1000
 
 training:
- rec_validation_freq: 1000
- rec_monitor_freq: 1000
- rec_constraint_freq: 50000
- max_steps: 20000
+  rec_results_freq: 1000
+  max_steps : 100000
 
 batch_size:
- LB: 256
- RB: 256
- interior: 1024
-
-graph:
- func_arch: true
+  LB: 200
+  RB: 200
+  interior: 1000
