@@ -18,9 +18,9 @@ training:
  max_steps: 20000
 
 batch_size:
- bc_min: 500
- bc_max: 500
- interior: 5000
+ LB: 256
+ RB: 256
+ interior: 1024
 
 graph:
  func_arch: true
