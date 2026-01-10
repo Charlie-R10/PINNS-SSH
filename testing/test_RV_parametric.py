@@ -9,7 +9,10 @@ from physicsnemo.sym.hydra import instantiate_arch, PhysicsNeMoConfig
 from physicsnemo.sym.key import Key
 from physicsnemo.sym.geometry.primitives_1d import Line1D
 from physicsnemo.sym.domain.domain import Domain
-from physicsnemo.sym.domain.constraint import PointwiseBoundaryConstraint, PointwiseInteriorConstraint
+from physicsnemo.sym.domain.constraint import (
+    PointwiseBoundaryConstraint,
+    PointwiseInteriorConstraint,
+)
 from physicsnemo.sym.domain.validator import PointwiseValidator
 from physicsnemo.sym.domain.inferencer import PointwiseInferencer
 from physicsnemo.sym.models.fully_connected import FullyConnectedArch
@@ -18,7 +21,8 @@ from physicsnemo.sym.node import Node
 from physicsnemo.sym.geometry.parameterization import Parameterization
 from physicsnemo.sym.eq.pde import PDE
 from diffusion_equation import DiffusionEquation1D, VacuumBoundary, ReflectiveBoundary
-        
+
+
 # Config from physics nemo
 @physicsnemo.sym.main(config_path="conf", config_name="config")
 def run(cfg: PhysicsNeMoConfig) -> None:
@@ -29,9 +33,10 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     Sigma_a = Symbol("Sigma_a")
     Q = Symbol("Q")
     a_ext = a + 3 * 0.7104 * D
+
     param_ranges = {
         Sigma_a: (0, 4),
-        Q: (0, 4)
+        Q: (0, 4),
     }
     pr = Parameterization(param_ranges)
 
@@ -44,14 +49,15 @@ def run(cfg: PhysicsNeMoConfig) -> None:
         output_keys=[Key("u")],
         cfg=cfg.arch.fully_connected,
     )
+
     nodes = (
-            de.make_nodes() +
-            vb.make_nodes() +
-            rb.make_nodes() +
-            [diffusion_net.make_node(name="diffusion_network")]
+        de.make_nodes()
+        + vb.make_nodes()
+        + rb.make_nodes()
+        + [diffusion_net.make_node(name="diffusion_network")]
     )
 
-    # Defining geometry as 1D line with extrapolated length 
+    # Defining geometry as 1D line with extrapolated length
     x = Symbol("x")
     geo = Line1D(0, a_ext)
     domain = Domain()
@@ -63,7 +69,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
         outvar={"reflective_boundary": 0},
         batch_size=cfg.batch_size.LB,
         criteria=Eq(x, 0),
-        parameterization=pr
+        parameterization=pr,
     )
     domain.add_constraint(LB, "LB")
 
@@ -73,7 +79,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
         outvar={"vacuum_boundary": 0},
         batch_size=cfg.batch_size.RB,
         criteria=Eq(x, a_ext),
-        parameterization=pr
+        parameterization=pr,
     )
     domain.add_constraint(RB, "RB")
 
@@ -83,68 +89,63 @@ def run(cfg: PhysicsNeMoConfig) -> None:
         geometry=geo,
         outvar={"diffusion_equation_u": 0},
         batch_size=cfg.batch_size.interior,
-        parameterization=pr
+        parameterization=pr,
     )
     domain.add_constraint(interior, "interior")
 
-  
-   # add validation data
-  
+    # add validation data
     X = np.linspace(0, a_ext, 101)[:, None]
 
-   def analytical_solution(x, D, a_ext, Sigma_a, Q):
-    L = np.sqrt(D / Sigma_a)
+    def analytical_solution(x, D, a_ext, Sigma_a, Q):
+        L = np.sqrt(D / Sigma_a)
+        denom = 2.0 * np.cosh(a_ext / L)
 
-    denom = 2.0 * np.cosh(a_ext / L)
-
-    return (
-        -L**2 * Q * np.exp(x / L) / denom
-        + L**2 * Q
-        + (L**2 * Q * np.exp(a_ext / L) / denom - L**2 * Q)
-          * np.exp(a_ext / L) * np.exp(-x / L)
-    )
-
+        return (
+            -L**2 * Q * np.exp(x / L) / denom
+            + L**2 * Q
+            + (L**2 * Q * np.exp(a_ext / L) / denom - L**2 * Q)
+            * np.exp(a_ext / L)
+            * np.exp(-x / L)
+        )
 
     # Validation grid
-`   X = np.linspace(0, a_ext, 101)[:, None]
+    X = np.linspace(0, a_ext, 101)[:, None]
+
     i = 0
     for Sa_val in [0.5, 1.0, 2.0]:
-            for Q_val in [0.5, 1.0, 2.0]:
+        for Q_val in [0.5, 1.0, 2.0]:
 
-                    u_true = analytical_solution(
-                    X.flatten(),
-                    D,
-                    a_ext,
-                    Sa_val,
-                    Q_val
-                )
+            u_true = analytical_solution(
+                X.flatten(),
+                D,
+                a_ext,
+                Sa_val,
+                Q_val,
+            )
 
-                validator = PointwiseValidator(
-                    nodes=nodes,
-                    invar={
-                        "x": X,
-                        "Sigma_a": np.full_like(X, Sa_val),
-                        "Q": np.full_like(X, Q_val),
-                    },
-                    true_outvar={
-                        "u": u_true.reshape(-1, 1)
-                    },
-                    batch_size=256,
-                )
+            validator = PointwiseValidator(
+                nodes=nodes,
+                invar={
+                    "x": X,
+                    "Sigma_a": np.full_like(X, Sa_val),
+                    "Q": np.full_like(X, Q_val),
+                },
+                true_outvar={
+                    "u": u_true.reshape(-1, 1),
+                },
+                batch_size=256,
+            )
 
-                domain.add_validator(
-                    validator,
-                    f"val_Sa_{Sa_val}_Q_{Q_val}_{i}"
-                )
-                i += 1
+            domain.add_validator(
+                validator,
+                f"val_Sa_{Sa_val}_Q_{Q_val}_{i}",
+            )
+            i += 1
 
     # make solver
     slv = Solver(cfg, domain)
-    
+
     # start solver
     slv.solve()
-
-if __name__ == "__main__":
-    run()
 
     
