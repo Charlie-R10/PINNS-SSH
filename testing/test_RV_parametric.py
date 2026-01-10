@@ -92,35 +92,52 @@ def run(cfg: PhysicsNeMoConfig) -> None:
   
     X = np.linspace(0, a_ext, 101)[:, None]
 
+   def analytical_solution(x, D, a_ext, Sigma_a, Q):
+    L = np.sqrt(D / Sigma_a)
+
+    denom = 2.0 * np.cosh(a_ext / L)
+
+    return (
+        -L**2 * Q * np.exp(x / L) / denom
+        + L**2 * Q
+        + (L**2 * Q * np.exp(a_ext / L) / denom - L**2 * Q)
+          * np.exp(a_ext / L) * np.exp(-x / L)
+    )
+
+
+    # Validation grid
+`   X = np.linspace(0, a_ext, 101)[:, None]
     i = 0
     for Sa_val in [0.5, 1.0, 2.0]:
-        for Q_val in [0.5, 1.0, 2.0]:
+            for Q_val in [0.5, 1.0, 2.0]:
 
-            B = np.sqrt(D / Sa_val)
-            u_true = analytical_solution(
-                X.flatten(), D, a_ext, Sa_val, Q_val
-            )
-    
-            validator = PointwiseValidator(
-                nodes=nodes,
-                invar={
-                    "x": X,
-                    "Sigma_a": np.full_like(X, Sa_val),
-                    "Q": np.full_like(X, Q_val),
-                },
-                true_outvar={
-                    "u": u_true.reshape(-1, 1)
-                },
-                batch_size=256,
-            )
-    
-            domain.add_validator(
-                validator,
-                f"val_Sa_{Sa_val}_Q_{Q_val}_{i}"
-            )
-            i += 1
-    
-    
+                    u_true = analytical_solution(
+                    X.flatten(),
+                    D,
+                    a_ext,
+                    Sa_val,
+                    Q_val
+                )
+
+                validator = PointwiseValidator(
+                    nodes=nodes,
+                    invar={
+                        "x": X,
+                        "Sigma_a": np.full_like(X, Sa_val),
+                        "Q": np.full_like(X, Q_val),
+                    },
+                    true_outvar={
+                        "u": u_true.reshape(-1, 1)
+                    },
+                    batch_size=256,
+                )
+
+                domain.add_validator(
+                    validator,
+                    f"val_Sa_{Sa_val}_Q_{Q_val}_{i}"
+                )
+                i += 1
+
     # make solver
     slv = Solver(cfg, domain)
     
