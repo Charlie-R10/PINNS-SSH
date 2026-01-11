@@ -148,4 +148,6 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     # start solver
     slv.solve()
 
-    
+if __name__ == "__main__":
+    run()
+
