@@ -26,7 +26,7 @@ from diffusion_equation import DiffusionEquation1D, VacuumBoundary, ReflectiveBo
 # Config from physics nemo
 @physicsnemo.sym.main(config_path="conf", config_name="config")
 def run(cfg: PhysicsNeMoConfig) -> None:
-
+    print(">>> ENTERED RUN <<<")
     ext_lengt_bc = True
     D = 1.0
     a = 5
