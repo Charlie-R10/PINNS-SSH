@@ -34,9 +34,19 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     Q = Symbol("Q")
     a_ext = a + 3 * 0.7104 * D
 
+    Sigma_a_hat = Symbol("Sigma_a_hat")
+    Q_hat = Symbol("Q_hat")
+
+    Sigma_a_max = 4.0
+    Q_max = 4.0
+
+    Sigma_a = Sigma_a_hat * Sigma_a_max
+    Q = Q_hat * Q_max
+
+
     param_ranges = {
-        Sigma_a: (0, 4),
-        Q: (0, 4),
+        Sigma_a_hat: (0.0, 1.0),
+        Q_hat: (0.0, 1.0),,
     }
     pr = Parameterization(param_ranges)
 
@@ -45,7 +55,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     rb = ReflectiveBoundary(u="u", D=D)
 
     diffusion_net = instantiate_arch(
-        input_keys=[Key("x"), Key("Sigma_a"), Key("Q")],
+        input_keys=[Key("x"), Key("Sigma_a_hat"), Key("Q_hat")],
         output_keys=[Key("u")],
         cfg=cfg.arch.fully_connected,
     )
@@ -127,8 +137,8 @@ def run(cfg: PhysicsNeMoConfig) -> None:
                 nodes=nodes,
                 invar={
                     "x": X,
-                    "Sigma_a": np.full_like(X, Sa_val),
-                    "Q": np.full_like(X, Q_val),
+                    "Sigma_a_hat": np.full_like(X, Sa_val / Sigma_a_max),
+                    "Q_hat": np.full_like(X, Q_val / Q_max),
                 },
                 true_outvar={
                     "u": u_true.reshape(-1, 1),
