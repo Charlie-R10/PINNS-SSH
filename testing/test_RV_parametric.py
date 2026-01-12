@@ -34,19 +34,30 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     Q = Symbol("Q")
     a_ext = a + 3 * 0.7104 * D
 
+
+    #Normalisation
+    
     Sigma_a_hat = Symbol("Sigma_a_hat")
     Q_hat = Symbol("Q_hat")
 
-    Sigma_a_max = 4.0
-    Q_max = 4.0
+    Sigma_a_max = 1.5
+    Q_max = 1.5
 
-    Sigma_a = Sigma_a_hat * Sigma_a_max
-    Q = Q_hat * Q_max
+    Sigma_a_expr = Sigma_a_hat * Sigma_a_max
+    Q_expr = Q_hat * Q_max
+
+    # mapping nodes to map normalized
+
+    mapping_nodes = [
+        Node.from_sympy(Sigma_a - Sigma_a_expr, "Sigma_a_map"),
+        Node.from_sympy(Q - Q_expr, "Q_map"),
+    ]
+
 
 
     param_ranges = {
         Sigma_a_hat: (0.0, 1.0),
-        Q_hat: (0.0, 1.0),,
+        Q_hat: (0.0, 1.0),
     }
     pr = Parameterization(param_ranges)
 
@@ -61,7 +72,8 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     )
 
     nodes = (
-        de.make_nodes()
+        mapping_nodes
+        + de.make_nodes()
         + vb.make_nodes()
         + rb.make_nodes()
         + [diffusion_net.make_node(name="diffusion_network")]
