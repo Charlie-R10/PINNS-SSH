@@ -10,8 +10,9 @@ defaults :
 arch:
   fully_connected:
     activation_fn: tanh
-    layer_size: 1024
-    nr_layers: 1
+    nr_layers: 4
+    layer_size: 256
+
 
 optimizer:
   lr: 0.0001
