@@ -26,16 +26,16 @@ from diffusion_equation import DiffusionEquation1D, VacuumBoundary, ReflectiveBo
 # Config from physics nemo
 @physicsnemo.sym.main(config_path="conf", config_name="config")
 def run(cfg: PhysicsNeMoConfig) -> None:
-    print(">>> ENTERED RUN <<<")
     ext_lengt_bc = True
     D = 1.0
     a = 5
+    # Sigma_a and Q as symbols to vary parameters
     Sigma_a = Symbol("Sigma_a")
     Q = Symbol("Q")
     a_ext = a + 3 * 0.7104 * D
 
 
-    #Normalisation
+    # Normalisation between [0, 1]
     
     Sigma_a_hat = Symbol("Sigma_a_hat")
     Q_hat = Symbol("Q_hat")
@@ -46,7 +46,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     Sigma_a_expr = Sigma_a_hat * Sigma_a_max
     Q_expr = Q_hat * Q_max
 
-    # mapping nodes to map normalized
+    # mapping nodes to map normalized for PINN
 
     mapping_nodes = [
     Node.from_sympy(Sigma_a_expr, "Sigma_a"),
@@ -54,17 +54,19 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     ]
 
 
-
+    # Ranges set from parameterized values ([0,1])
     param_ranges = {
         Sigma_a_hat: (0.0, 1.0),
         Q_hat: (0.0, 1.0),
     }
     pr = Parameterization(param_ranges)
 
+    # Uses original (transformed) variable for BCs
     de = DiffusionEquation1D(u="u", D=D, Sigma_a=Sigma_a, Q=Q)
     vb = VacuumBoundary(u="u", D=D, extrapolated_length=ext_lengt_bc)
     rb = ReflectiveBoundary(u="u", D=D)
 
+    # Uses normalized variable for network
     diffusion_net = instantiate_arch(
         input_keys=[Key("x"), Key("Sigma_a_hat"), Key("Q_hat")],
         output_keys=[Key("u")],
@@ -84,7 +86,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     geo = Line1D(0, a_ext)
     domain = Domain()
 
-    # boundary condition
+    # boundary conditions
     LB = PointwiseBoundaryConstraint(
         nodes=nodes,
         geometry=geo,
@@ -115,7 +117,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     )
     domain.add_constraint(interior, "interior")
 
-    # add validation data
+    # add validation data (define analytical solution symbollically)
     X = np.linspace(0, a_ext, 101)[:, None]
 
     def analytical_solution(x, D, a_ext, Sigma_a, Q):
@@ -130,9 +132,11 @@ def run(cfg: PhysicsNeMoConfig) -> None:
             * np.exp(-x / L)
         )
 
-    # Validation grid
+    # Validation grid 
     X = np.linspace(0, a_ext, 101)[:, None]
 
+
+    # Set values of Sa and Q to validate (can this be automated?)
     i = 0
     for Sa_val in [0.5, 1.0, 2.0]:
         for Q_val in [0.5, 1.0, 2.0]:
