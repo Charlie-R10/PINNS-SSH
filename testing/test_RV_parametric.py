@@ -49,8 +49,8 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     # mapping nodes to map normalized
 
     mapping_nodes = [
-        Node.from_sympy(Sigma_a - Sigma_a_expr, "Sigma_a_map"),
-        Node.from_sympy(Q - Q_expr, "Q_map"),
+    Node.from_sympy(Sigma_a_expr, "Sigma_a"),
+    Node.from_sympy(Q_expr, "Q"),
     ]
 
 
