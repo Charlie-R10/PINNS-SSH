@@ -181,6 +181,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     def analytical_solution_1(X1, D1, D2, a_ext, Sigma_a1, Sigma_a2, Q, a1):
         L1 = np.sqrt(D1 / Sigma_a1)
         L2 = np.sqrt(D2 / Sigma_a2)
+        Q = Q/D1
         u1 = D2*L1**3*Q*(np.exp(2*a1/L2) + np.exp(2*a_ext/L2))*np.exp(a1/L1)*np.exp(X1/L1)/(-D1*L2*np.exp(2*a1/L2) +
            D1*L2*np.exp(2*a_ext/L2) + D1*L2*np.exp(2*a1/L2 + 2*a1/L1) - D1*L2*np.exp(2*a_ext/L2 + 2*a1/L1) -
            D2*L1*np.exp(2*a1/L2) - D2*L1*np.exp(2*a_ext/L2) - D2*L1*np.exp(2*a1/L2 + 2*a1/L1) -
@@ -219,6 +220,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     def analytical_solution_2(X2, D1, D2, a_ext, Sigma_a1, Sigma_a2, Q, a2):
         L1 = np.sqrt(D1 / Sigma_a1)
         L2 = np.sqrt(D2 / Sigma_a2)
+        Q = Q/D1
         u2 = D1*L1**2*L2*Q*(1 - np.exp(2*a1/L1))*np.exp(-X2/L2)*np.exp((a1 + 2*a_ext)/L2)/(-D1*L2*np.exp(2*a1/L2) +
          D1*L2*np.exp(2*a_ext/L2) + D1*L2*np.exp(2*a1*(1/L2 + 1/L1)) - D1*L2*np.exp(2*a_ext/L2 + 2*a1/L1) -
          D2*L1*np.exp(2*a1/L2) - D2*L1*np.exp(2*a_ext/L2) - D2*L1*np.exp(2*a1*(1/L2 + 1/L1)) -
