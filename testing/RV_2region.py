@@ -71,8 +71,8 @@ def run(cfg: PhysicsNeMoConfig) -> None:
         Node.from_sympy(Q_expr, "Q"),
     ]
 
-    de1 = DiffusionEquation1D(u="u1", D=D1, Sigma_a=Sigma_a1/D1, Q=Q/D1) #Q/d1 here ?
-    de2 = DiffusionEquation1D(u="u2", D=D2, Sigma_a=Sigma_a2/D2, Q=0)
+    de1 = DiffusionEquation1D(u="u1", D=1.0, Sigma_a=Sigma_a1/D1, Q=Q/D1) #Q/d1 here ?
+    de2 = DiffusionEquation1D(u="u2", D=1.0, Sigma_a=Sigma_a2/D2, Q=0)
     de_in = InterfaceDiffusion1D(u1="u1", u2="u2", D1=D1, D2=D2)
     vb = VacuumBoundary(u="u2", D=D2, extrapolated_length=ext_lengt_bc)
     rb = ReflectiveBoundary(u="u1", D=D1)
