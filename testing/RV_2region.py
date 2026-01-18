@@ -28,7 +28,7 @@ from diffusion_equation import (
 )
 from physicsnemo.sym.eq.pdes.diffusion import Diffusion
 from physicsnemo.sym.node import Node
-from physicsnemo.sym.node import Node
+from physicsnemo.sym.domain.parameterization import Parameterization
 
 
 
