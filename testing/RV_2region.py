@@ -33,7 +33,7 @@ from physicsnemo.sym.geometry.parameterization import Parameterization
 
 
 
-@physicsnemo.sym.main(config_path="conf", config_name="config")
+@physicsnemo.sym.main(config_path="conf", config_name="RV_config")
 def run(cfg: PhysicsNeMoConfig) -> None:
     # make list of nodes to unroll graph on
     ext_lengt_bc = True
