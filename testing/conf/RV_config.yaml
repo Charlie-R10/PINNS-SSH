@@ -1,0 +1,6 @@
+batch_size:
+  LB: 256
+  IB: 256
+  RB: 256
+  interior1: 1024
+  interior2: 1024
