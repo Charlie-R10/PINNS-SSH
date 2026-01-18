@@ -191,7 +191,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
         return u1
 
     i = 0
-    for Sa1_val in [0.2, 0.4, 2.0]:
+    for Sa1_val in [0.1, 0.2, 0.3]:
         for Q_val in [0.5, 0.8, 1.2]:
             for Sa2_val in [0.04, 0.08]:
                 u1 = analytical_solution_1(
@@ -229,7 +229,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
         return u2
 
     i = 0
-    for Sa1_val in [0.2, 0.4, 2.0]:
+    for Sa1_val in [0.1, 0.2, 0.3]:
         for Q_val in [0.5, 0.8, 1.2]:
             for Sa2_val in [0.04, 0.08]:
                 u2 = analytical_solution_2(
