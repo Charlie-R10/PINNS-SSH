@@ -40,8 +40,8 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     Sigma_a_hat = Symbol("Sigma_a_hat")
     Q_hat = Symbol("Q_hat")
 
-    Sigma_a_max = 1.5
-    Q_max = 1.5
+    Sigma_a_max = 3
+    Q_max = 3
 
     Sigma_a_expr = Sigma_a_hat * Sigma_a_max
     Q_expr = Q_hat * Q_max
@@ -138,8 +138,8 @@ def run(cfg: PhysicsNeMoConfig) -> None:
 
     # Set values of Sa and Q to validate (can this be automated?)
     i = 0
-    for Sa_val in [0.5, 1.0, 2.0]:
-        for Q_val in [0.5, 1.0, 2.0]:
+    for Sa_val in [0.05, 1.0, 2.0]:
+        for Q_val in [0.05, 1.0, 2.0]:
 
             u_true = analytical_solution(
                 X.flatten(),
