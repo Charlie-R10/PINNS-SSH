@@ -152,13 +152,14 @@ def run(cfg: PhysicsNeMoConfig) -> None:
                 Q_val,
             )
 
+            Sigma_hat_val = np.log(Sa_val / Sigma_a_min) / np.log(Sigma_a_max / Sigma_a_min)
+            Q_hat_val = np.log(Q_val / Q_min) / np.log(Q_max  / Q_min)
             validator = PointwiseValidator(
                 nodes=nodes,
                 invar={
                     "x": X,
-                    "Sigma_a_hat": np.log(Sa_val / Sigma_a_min) / np.log(Sigma_a_max / Sigma_a_min),
-                    "Q_hat": np.log(Q_val / Q_min) / np.log(Q_max / Q_min),
-
+                    "Sigma_a_hat": np.full_like(X, Sigma_hat_val),
+                    "Q_hat": np.full_like(X, Q_hat_val)
                 },
                 true_outvar={
                     "u": u_true.reshape(-1, 1),
