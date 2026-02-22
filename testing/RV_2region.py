@@ -207,7 +207,6 @@ def run(cfg: PhysicsNeMoConfig) -> None:
                     },
                     true_outvar={"u1": u1.reshape(-1, 1)},
                     batch_size=256,
-                    parameterization=pr,
                 )
 
                 domain.add_validator(
@@ -246,7 +245,6 @@ def run(cfg: PhysicsNeMoConfig) -> None:
                     },
                     true_outvar={"u2": u2.reshape(-1, 1)},
                     batch_size=256,
-                    parameterization=pr,
                 )
 
                 domain.add_validator(
