@@ -36,7 +36,6 @@ from physicsnemo.sym.geometry.parameterization import Parameterization
 @physicsnemo.sym.main(config_path="conf", config_name="RV_config")
 def run(cfg: PhysicsNeMoConfig) -> None:
     # make list of nodes to unroll graph on
-    ext_lengt_bc = True
     D1 = 1.0
     Sigma_a1 = Symbol("Sigma_a1")  # 0.01
     D2 = 0.8
@@ -44,12 +43,8 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     a1 = 5.0
     a2 = 10.0
     Q = Symbol("Q")  # 1.0
-
-    if ext_lengt_bc:
-        a_ext = a2 + 3 * 0.7104 * D2
-    else:
-        a_ext = a2
-    # a_ext = 2 * a
+    ell_ext  = 3.0 * 0.7104 * D2
+    a_ext = a2 + ell_ext
 
     # Normalization [0,1]
     Sigma_a1_hat = Symbol("Sigma_a1_hat")
@@ -71,10 +66,10 @@ def run(cfg: PhysicsNeMoConfig) -> None:
         Node.from_sympy(Q_expr, "Q"),
     ]
 
-    de1 = DiffusionEquation1D(u="u1", D=D1, Sigma_a=Sigma, Q=Q) #Q/d1 here ?
+    de1 = DiffusionEquation1D(u="u1", D=D1, Sigma_a=Sigma_a1, Q=Q) #Q/d1 here ?
     de2 = DiffusionEquation1D(u="u2", D=D2, Sigma_a=Sigma_a2, Q=0)
     de_in = InterfaceDiffusion1D(u1="u1", u2="u2", D1=D1, D2=D2)
-    vb = VacuumBoundary(u="u2", D=D2, extrapolated_length=ext_lengt_bc)
+    vb = VacuumBoundary(u="u2", D=D2, extrapolated_length=ell_ext)
     rb = ReflectiveBoundary(u="u1", D=D1)
 
     # Ranges set from parameterized values ([0,1])
@@ -129,10 +124,14 @@ def run(cfg: PhysicsNeMoConfig) -> None:
 
     IB = PointwiseBoundaryConstraint(
         nodes=nodes,
-        geometry=geo1,
+        geometry=[geo1, geo2],
         outvar={
             "flux_continuity": 0,
             "current_continuity": 0,
+        },
+        lambda_weighting={
+            "flux_continuity": 10.0,   #lambda weighting? Remove if reqd
+            "current_continuity": 10.0,
         },
         batch_size=cfg.batch_size.IB,
         criteria=Eq(x, a1),
@@ -155,7 +154,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
         nodes=nodes,
         geometry=geo1,
         outvar={"diffusion_equation_u1": 0},
-        bounds={x: (0, a1)},
+        #bounds={x: (0, a1)},
         batch_size=cfg.batch_size.interior1,
         quasirandom=True,
         parameterization=pr,
@@ -167,7 +166,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
         nodes=nodes,
         geometry=geo2,
         outvar={"diffusion_equation_u2": 0},
-        bounds={x: (a1, a_ext)},
+        #bounds={x: (a1, a_ext)},
         batch_size=cfg.batch_size.interior2,
         quasirandom=True,
         parameterization=pr,
@@ -208,6 +207,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
                     },
                     true_outvar={"u1": u1.reshape(-1, 1)},
                     batch_size=256,
+                    parameterization=pr,
                 )
 
                 domain.add_validator(
@@ -246,6 +246,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
                     },
                     true_outvar={"u2": u2.reshape(-1, 1)},
                     batch_size=256,
+                    parameterization=pr,
                 )
 
                 domain.add_validator(
