@@ -124,7 +124,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
 
     IB = PointwiseBoundaryConstraint(
         nodes=nodes,
-        geometry=[geo1, geo2],
+        geometry=geo1,
         outvar={
             "flux_continuity": 0,
             "current_continuity": 0,
