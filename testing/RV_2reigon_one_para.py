@@ -145,6 +145,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
         geometry=geo1,
         outvar={"diffusion_equation_u1": 0},
         #bounds={x: (0, a1)},
+        lambda_weighting={"diffusion_equation_u1": 10.0},
         batch_size=cfg.batch_size.interior1,
         quasirandom=True,
         parameterization=pr,
