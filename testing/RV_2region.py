@@ -129,10 +129,6 @@ def run(cfg: PhysicsNeMoConfig) -> None:
             "flux_continuity": 0,
             "current_continuity": 0,
         },
-        lambda_weighting={
-            "flux_continuity": 10.0,   #lambda weighting? Remove if reqd
-            "current_continuity": 10.0,
-        },
         batch_size=cfg.batch_size.IB,
         criteria=Eq(x, a1),
         parameterization=pr,
@@ -186,7 +182,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
            D2*L1*np.exp(2*a_ext/L2 + 2*a1/L1)) + D2*L1**3*Q*(np.exp(2*a1/L2) +
            np.exp(2*a_ext/L2))*np.exp(a1/L1)*np.exp(-X1/L1)/(-D1*L2*np.exp(2*a1/L2) + D1*L2*np.exp(2*a_ext/L2) +
            D1*L2*np.exp(2*a1/L2 + 2*a1/L1) - D1*L2*np.exp(2*a_ext/L2 + 2*a1/L1) - D2*L1*np.exp(2*a1/L2) -
-           D2*L1*np.exp(2*a_ext/L2) - D2*L1*np.exp(2*a1/L2 + 2*a1/L1) - D2*L1*np.exp(2*a_ext/L2 + 2*a1/L1)) + L1**2*Q
+           D2*L1*np.exp(2*a_ext/L2) - D2*L1*np.exp(2*a1/L2 + 2*a1/L1) - D2*L1*np.exp(2*a_ext/L2 + 2*a1/L1)) + Q / Sigma_a1
         return u1
 
     i = 0
