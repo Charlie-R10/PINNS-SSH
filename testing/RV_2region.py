@@ -46,6 +46,8 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     ell_ext  = 3.0 * 0.7104 * D2
     a_ext = a2 + ell_ext
 
+    x_ref = a_ext  # 11.7ish
+
     # Normalization [0,1]
     Sigma_a1_hat = Symbol("Sigma_a1_hat")
     Sigma_a2_hat = Symbol("Sigma_a2_hat")
@@ -66,8 +68,10 @@ def run(cfg: PhysicsNeMoConfig) -> None:
         Node.from_sympy(Q_expr, "Q"),
     ]
 
-    u_ref = Q_max / Sigma_a1_max
-    de1 = DiffusionEquation1D(u="u1", D=D1, Sigma_a=Sigma_a1, Q=Q/u_ref) #Q/d1 here ?
+    x_hat = Symbol("x_hat") # normalize x and add as mapping node
+    mapping_nodes += [Node.from_sympy(x_hat * x_ref, "x")]
+
+    de1 = DiffusionEquation1D(u="u1", D=D1, Sigma_a=Sigma_a1, Q=Q) #Q/d1 here ?
     de2 = DiffusionEquation1D(u="u2", D=D2, Sigma_a=Sigma_a2, Q=0)
     de_in = InterfaceDiffusion1D(u1="u1", u2="u2", D1=D1, D2=D2)
     vb = VacuumBoundary(u="u2", D=D2, extrapolated_length=ell_ext)
@@ -82,13 +86,13 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     pr = Parameterization(param_ranges)
 
     diffusion_net_u1 = instantiate_arch(
-        input_keys=[Key("x"), Key("Sigma_a1_hat"), Key("Sigma_a2_hat"), Key("Q_hat")],
+        input_keys=[Key("x_hat"), Key("Sigma_a1_hat"), Key("Sigma_a2_hat"), Key("Q_hat")],
         output_keys=[Key("u1")],
         cfg=cfg.arch.fully_connected,
     )
 
     diffusion_net_u2 = instantiate_arch(
-        input_keys=[Key("x"), Key("Sigma_a1_hat"), Key("Sigma_a2_hat"), Key("Q_hat")],
+        input_keys=[Key("x_hat"), Key("Sigma_a1_hat"), Key("Sigma_a2_hat"), Key("Q_hat")],
         output_keys=[Key("u2")],
         cfg=cfg.arch.fully_connected,
     )
@@ -197,12 +201,12 @@ def run(cfg: PhysicsNeMoConfig) -> None:
                 validator = PointwiseValidator(
                     nodes=nodes,
                     invar={
-                        "x": X1,
+                        "x": X1 / x_ref,
                         "Sigma_a1_hat": np.full_like(X1, Sa1_val / Sigma_a1_max),
                         "Sigma_a2_hat": np.full_like(X1, Sa2_val / Sigma_a2_max),
                         "Q_hat": np.full_like(X1, Q_val / Q_max),
                     },
-                    true_outvar={"u1": u1.reshape(-1, 1)/u_ref},
+                    true_outvar={"u1": u1.reshape(-1, 1)},
                     batch_size=256,
                 )
 
@@ -235,12 +239,12 @@ def run(cfg: PhysicsNeMoConfig) -> None:
                 validator = PointwiseValidator(
                     nodes=nodes,
                     invar={
-                        "x": X2,
+                        "x": X2 / x_ref,
                         "Sigma_a1_hat": np.full_like(X2, Sa1_val / Sigma_a1_max),
                         "Sigma_a2_hat": np.full_like(X2, Sa2_val / Sigma_a2_max),
                         "Q_hat": np.full_like(X2, Q_val / Q_max),
                     },
-                    true_outvar={"u2": u2.reshape(-1, 1)/u_ref},
+                    true_outvar={"u2": u2.reshape(-1, 1)},
                     batch_size=256,
                 )
 
