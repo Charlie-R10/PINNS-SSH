@@ -66,7 +66,8 @@ def run(cfg: PhysicsNeMoConfig) -> None:
         Node.from_sympy(Q_expr, "Q"),
     ]
 
-    de1 = DiffusionEquation1D(u="u1", D=D1, Sigma_a=Sigma_a1, Q=Q) #Q/d1 here ?
+    u_ref = Q_max / Sigma_a1_max
+    de1 = DiffusionEquation1D(u="u1", D=D1, Sigma_a=Sigma_a1, Q=Q/u_ref) #Q/d1 here ?
     de2 = DiffusionEquation1D(u="u2", D=D2, Sigma_a=Sigma_a2, Q=0)
     de_in = InterfaceDiffusion1D(u1="u1", u2="u2", D1=D1, D2=D2)
     vb = VacuumBoundary(u="u2", D=D2, extrapolated_length=ell_ext)
@@ -74,9 +75,9 @@ def run(cfg: PhysicsNeMoConfig) -> None:
 
     # Ranges set from parameterized values ([0,1])
     param_ranges = {
-        Sigma_a1_hat: (0.02, 1.0),
-        Sigma_a2_hat: (0.2, 1.0),
-        Q_hat: (0.1, 1.0),
+        Sigma_a1_hat: (0.0, 1.0),
+        Sigma_a2_hat: (0.0, 1.0),
+        Q_hat: (0.0, 1.0),
     }
     pr = Parameterization(param_ranges)
 
@@ -201,7 +202,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
                         "Sigma_a2_hat": np.full_like(X1, Sa2_val / Sigma_a2_max),
                         "Q_hat": np.full_like(X1, Q_val / Q_max),
                     },
-                    true_outvar={"u1": u1.reshape(-1, 1)},
+                    true_outvar={"u1": u1.reshape(-1, 1)/u_ref},
                     batch_size=256,
                 )
 
@@ -239,7 +240,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
                         "Sigma_a2_hat": np.full_like(X2, Sa2_val / Sigma_a2_max),
                         "Q_hat": np.full_like(X2, Q_val / Q_max),
                     },
-                    true_outvar={"u2": u2.reshape(-1, 1)},
+                    true_outvar={"u2": u2.reshape(-1, 1)/u_ref},
                     batch_size=256,
                 )
 
