@@ -36,6 +36,7 @@ from physicsnemo.sym.geometry.parameterization import Parameterization
 @physicsnemo.sym.main(config_path="conf", config_name="RV_config")
 def run(cfg: PhysicsNeMoConfig) -> None:
     # make list of nodes to unroll graph on
+    ext_length_bc = True
     D1 = 1.0
     Sigma_a1 = Symbol("Sigma_a1")  # 0.01
     D2 = 0.8
@@ -43,8 +44,10 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     a1 = 5.0
     a2 = 10.0
     Q = Symbol("Q")  # 1.0
-    ell_ext  = 3.0 * 0.7104 * D2
-    a_ext = a2 + ell_ext
+    if ext_length_bc:
+        a_ext = a2 + 3 * 0.7104 * D2
+    else:    
+        a_ext = a2
 
     # Normalization [0,1]
     Sigma_a1_hat = Symbol("Sigma_a1_hat")
@@ -70,7 +73,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     de1 = DiffusionEquation1D(u="u1", D=D1, Sigma_a=Sigma_a1, Q=Q) #Q/d1 here ?
     de2 = DiffusionEquation1D(u="u2", D=D2, Sigma_a=Sigma_a2, Q=0)
     de_in = InterfaceDiffusion1D(u1="u1", u2="u2", D1=D1, D2=D2)
-    vb = VacuumBoundary(u="u2", D=D2, extrapolated_length=ell_ext)
+    vb = VacuumBoundary(u="u2", D=D2, extrapolated_length=ext_length_bc)
     rb = ReflectiveBoundary(u="u1", D=D1)
 
     # Ranges set from parameterized values ([0,1])
@@ -151,7 +154,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
         nodes=nodes,
         geometry=geo1,
         outvar={"diffusion_equation_u1": 0},
-        #bounds={x: (0, a1)},
+        bounds={x: (0, a1)},
         batch_size=cfg.batch_size.interior1,
         quasirandom=True,
         parameterization=pr,
@@ -163,7 +166,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
         nodes=nodes,
         geometry=geo2,
         outvar={"diffusion_equation_u2": 0},
-        #bounds={x: (a1, a_ext)},
+        bounds={x: (a1, a_ext)},
         batch_size=cfg.batch_size.interior2,
         quasirandom=True,
         parameterization=pr,
@@ -173,6 +176,8 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     # add validation data
     X1 = np.linspace(0, a1, 200)[:, None]
     X2 = np.linspace(a1, a_ext, 200)[:, None]
+
+    Q = Q/D1
 
     def analytical_solution_1(X1, D1, D2, a_ext, Sigma_a1, Sigma_a2, Q, a1):
         L1 = np.sqrt(D1 / Sigma_a1)
