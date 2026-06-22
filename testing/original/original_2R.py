@@ -84,6 +84,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
         geometry=geo1,
         outvar={"reflective_boundary": 0},
         batch_size=cfg.batch_size.LB,
+        lambda_weighting={"reflective_boundary": 100.0},
         criteria=Eq(x, 0)
     )
     domain.add_constraint(LB, "LB")
