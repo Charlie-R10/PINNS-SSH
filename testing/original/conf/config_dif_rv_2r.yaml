@@ -10,8 +10,8 @@ defaults :
 arch:
   fully_connected:
     activation_fn: tanh
-    layer_size: 2048
-    nr_layers: 1
+    layer_size: 256
+    nr_layers: 5
 
 optimizer:
   lr: 0.001
@@ -26,8 +26,8 @@ training:
   max_steps : 200000
 
 batch_size:
-  LB: 2
-  RB: 2
+  LB: 100
+  RB: 100
   IB: 200
   interior1: 2000
   interior2: 2000
