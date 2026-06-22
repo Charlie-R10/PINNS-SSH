@@ -84,7 +84,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
         geometry=geo1,
         outvar={"reflective_boundary": 0},
         batch_size=cfg.batch_size.LB,
-        lambda_weighting={"reflective_boundary": 100.0},
+        #lambda_weighting={"reflective_boundary": 100.0},
         criteria=Eq(x, 0)
     )
     domain.add_constraint(LB, "LB")
@@ -95,7 +95,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
         outvar={"flux_continuity": 0,
                 "current_continuity": 0},
         batch_size=cfg.batch_size.IB,
-        lambda_weighting={"flux_continuity": 100.0, "current_continuity": 100.0},
+        #lambda_weighting={"flux_continuity": 100.0, "current_continuity": 100.0},
         criteria=Eq(x, a1)
     )
     domain.add_constraint(IB, "IB")
@@ -105,7 +105,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
         geometry=geo2,
         outvar={"vacuum_boundary": 0},
         batch_size=cfg.batch_size.RB,
-        lambda_weighting={"vacuum_boundary": 100.0},
+        #lambda_weighting={"vacuum_boundary": 100.0},
         criteria=Eq(x, a_ext)
     )
     domain.add_constraint(RB, "RB")
