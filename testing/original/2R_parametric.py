@@ -22,6 +22,8 @@ from physicsnemo.sym.domain.validator import PointwiseValidator
 from physicsnemo.sym.key import Key
 from diffusion_equation import DiffusionEquation1D, VacuumBoundary, ReflectiveBoundary, InterfaceDiffusion1D
 from physicsnemo.sym.eq.pdes.diffusion import Diffusion
+from physicsnemo.sym.domain.constraint import PointwiseConstraint
+from physicsnemo.sym.geometry.parameterization import Parameterization
 
 
 @physicsnemo.sym.main(config_path="conf", config_name="config_dif_rv_2r")
@@ -34,7 +36,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     Sigma_a2 = 0.1
     a1 = 5.0
     a2 = 10.0
-    Q = 1.0
+    Q = Symbol("Q")
     if ext_lengt_bc:
         a_ext = a2 + 3 * 0.7104 * D2
     else:
@@ -47,14 +49,19 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     vb = VacuumBoundary(u="u2", D=D2, extrapolated_length=ext_lengt_bc)
     rb = ReflectiveBoundary(u="u1", D=D1)
 
+    param_ranges = {
+        Q: (0.0, 1.0)
+    }
+    pr = Parameterization(param_ranges)
+    
     diffusion_net_u1 = instantiate_arch(
-        input_keys=[Key("x")],
+        input_keys=[Key("x"), Key("Q")],
         output_keys=[Key("u1")],
         cfg=cfg.arch.fully_connected,
     )
 
     diffusion_net_u2 = instantiate_arch(
-        input_keys=[Key("x")],
+        input_keys=[Key("x"), Key("Q")],
         output_keys=[Key("u2")],
         cfg=cfg.arch.fully_connected,
     )
@@ -85,7 +92,8 @@ def run(cfg: PhysicsNeMoConfig) -> None:
         outvar={"reflective_boundary": 0},
         batch_size=cfg.batch_size.LB,
         lambda_weighting={"reflective_boundary": 10.0},
-        criteria=Eq(x, 0)
+        criteria=Eq(x, 0),
+        parameterization=pr
     )
     domain.add_constraint(LB, "LB")
 
@@ -96,7 +104,8 @@ def run(cfg: PhysicsNeMoConfig) -> None:
                 "current_continuity": 0},
         batch_size=cfg.batch_size.IB,
         lambda_weighting={"flux_continuity": 10.0, "current_continuity": 10.0},
-        criteria=Eq(x, a1)
+        criteria=Eq(x, a1),
+        parameterization=pr
     )
     domain.add_constraint(IB, "IB")
 
@@ -106,7 +115,8 @@ def run(cfg: PhysicsNeMoConfig) -> None:
         outvar={"vacuum_boundary": 0},
         batch_size=cfg.batch_size.RB,
         lambda_weighting={"vacuum_boundary": 10.0},
-        criteria=Eq(x, a_ext)
+        criteria=Eq(x, a_ext),
+        parameterization=pr
     )
     domain.add_constraint(RB, "RB")
 
@@ -118,6 +128,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
         bounds={x: (0, a1)},
         batch_size=cfg.batch_size.interior1,
         quasirandom=True,
+        parameterization=pr
     )
     domain.add_constraint(interior1, "interior1")
 
@@ -129,93 +140,116 @@ def run(cfg: PhysicsNeMoConfig) -> None:
         bounds={x: (a1, a_ext)},
         batch_size=cfg.batch_size.interior2,
         quasirandom=True,
+        parameterization=pr
     )
     domain.add_constraint(interior2, "interior2")
 
-    # add validation data
+
+
+
+
+
+    
+    # add validation data and analytical solutions
     deltaX = 0.01
     X1 = np.arange(0, a1, deltaX)
     X2 = np.arange(a1, a_ext, deltaX)
     L1 = np.sqrt(D1/Sigma_a1)
     L2 = np.sqrt(D2/Sigma_a2)
 
-    Q = Q/D1
+    #Q = Q/D1  #should it change now Q symbolic?
 
-    u1 = D2*L1**3*Q*(np.exp(2*a1/L2) + np.exp(2*a_ext/L2))*np.exp(a1/L1)*np.exp(X1/L1)/(-D1*L2*np.exp(2*a1/L2) +
-           D1*L2*np.exp(2*a_ext/L2) + D1*L2*np.exp(2*a1/L2 + 2*a1/L1) - D1*L2*np.exp(2*a_ext/L2 + 2*a1/L1) -
-           D2*L1*np.exp(2*a1/L2) - D2*L1*np.exp(2*a_ext/L2) - D2*L1*np.exp(2*a1/L2 + 2*a1/L1) -
-           D2*L1*np.exp(2*a_ext/L2 + 2*a1/L1)) + D2*L1**3*Q*(np.exp(2*a1/L2) +
-           np.exp(2*a_ext/L2))*np.exp(a1/L1)*np.exp(-X1/L1)/(-D1*L2*np.exp(2*a1/L2) + D1*L2*np.exp(2*a_ext/L2) +
-           D1*L2*np.exp(2*a1/L2 + 2*a1/L1) - D1*L2*np.exp(2*a_ext/L2 + 2*a1/L1) - D2*L1*np.exp(2*a1/L2) -
-           D2*L1*np.exp(2*a_ext/L2) - D2*L1*np.exp(2*a1/L2 + 2*a1/L1) - D2*L1*np.exp(2*a_ext/L2 + 2*a1/L1)) + L1**2*Q
-    # a_l = -a_ext
-    # a_r = a_ext
-    # if ext_lengt_bc:
-    #     u = -B**2 * Q * np.exp(x/B)/(2*np.cosh(a_r/B)) + B**2*Q + (B**2*Q*np.exp(a_r/B)/(2*np.cosh(a_r/B))
-    #                                                                - B**2*Q)*np.exp(a_r/B)*np.exp(-x/B)
-    #     # u = (B**2*Q - B**2*Q*np.exp(X/B)/(np.exp(a_l/B) + np.exp(a_r/B)) +
-    #     #      (-B**2*Q + B**2*Q*np.exp(a_r/B)/(np.exp(a_l/B) + np.exp(a_r/B)))*np.exp(a_r/B)*np.exp(-X/B))
-    #     # u = B * Q * (np.exp(2 * a_ext/B) - np.exp(2 * X/B)) * np.exp(-X/B)/(2 * D * (np.exp(2 * a_ext/B) + 1))
-    # else:
-    #     u = B * Q * (4 * D * np.exp(2*a_ext/B) + B * np.exp(2 * a_ext/B) +
-    #                  (4 * D - B) * np.exp(2 * X/B)) * np.exp(-X/B)/(2 * D * (4 * D * np.exp(2*a_ext/B)
-    #                                                                          - 4 * D + B * np.exp(2 * a_ext/B) + B))
-    # u = (0.5 * Q * B/D) * (np.exp(-X/B) - np.exp(-(a_ext - X)/B))/(1 + np.exp(-a_ext/B))
-    # X = np.meshgrid(x)
-    X1 = np.expand_dims(X1.flatten(), axis=-1)
-    u1 = np.expand_dims(u1.flatten(), axis=-1)
-    print("*************************************")
-    print(X1.shape)
-    print("*************************************")
-    # T = np.expand_dims(T.flatten(), axis=-1)
-    # u = np.zeros(shape=X.shape)
-    invar_numpy = {"x": X1}
-    outvar_numpy = {"u1": u1}
-    validator = PointwiseValidator(
-        nodes=nodes, invar=invar_numpy, true_outvar=outvar_numpy, batch_size=128
-    )
-    domain.add_validator(validator, "validator_1")
+    # Midpoint values
+    all_x_u1, all_u1_vals, all_Q_u1 = [], [], []
+    all_x_u2, all_u2_vals, all_Q_u2 = [], [], []
 
-    u2 = D1*L1**2*L2*Q*(1 - np.exp(2*a1/L1))*np.exp(-X2/L2)*np.exp((a1 + 2*a_ext)/L2)/(-D1*L2*np.exp(2*a1/L2) +
-         D1*L2*np.exp(2*a_ext/L2) + D1*L2*np.exp(2*a1*(1/L2 + 1/L1)) - D1*L2*np.exp(2*a_ext/L2 + 2*a1/L1) -
-         D2*L1*np.exp(2*a1/L2) - D2*L1*np.exp(2*a_ext/L2) - D2*L1*np.exp(2*a1*(1/L2 + 1/L1)) -
-         D2*L1*np.exp(2*a_ext/L2 + 2*a1/L1)) - D1*L1**2*L2*Q*(np.exp(2*a1/L1) - 1)*np.exp(a1/L2)*np.exp(X2/L2)/(D1*L2*np.exp(2*a1/L2) -
-         D1*L2*np.exp(2*a_ext/L2) - D1*L2*np.exp(2*a1/L2 + 2*a1/L1) + D1*L2*np.exp(2*a_ext/L2 + 2*a1/L1) +
-         D2*L1*np.exp(2*a1/L2) + D2*L1*np.exp(2*a_ext/L2) + D2*L1*np.exp(2*a1/L2 + 2*a1/L1) +
-         D2*L1*np.exp(2*a_ext/L2 + 2*a1/L1))
-    X2 = np.expand_dims(X2.flatten(), axis=-1)
-    u2 = np.expand_dims(u2.flatten(), axis=-1)
-    invar_numpy = {"x": X2}
-    outvar_numpy = {"u2": u2}
-    validator = PointwiseValidator(
-        nodes=nodes, invar=invar_numpy, true_outvar=outvar_numpy, batch_size=128
-    )
-    domain.add_validator(validator, "validator_2")
+    def analytical_solution_1(X1, D1, D2, a_ext, Sigma_a1, Sigma_a2, Q, a1):
+        Q=Q/D1 # changes for each Q
+        L1 = np.sqrt(D1/Sigma_a1)
+        L2 = np.sqrt(D2/Sigma_a2)
+        u1 = D2*L1**3*Q*(np.exp(2*a1/L2) + np.exp(2*a_ext/L2))*np.exp(a1/L1)*np.exp(X1/L1)/(-D1*L2*np.exp(2*a1/L2) +
+               D1*L2*np.exp(2*a_ext/L2) + D1*L2*np.exp(2*a1/L2 + 2*a1/L1) - D1*L2*np.exp(2*a_ext/L2 + 2*a1/L1) -
+               D2*L1*np.exp(2*a1/L2) - D2*L1*np.exp(2*a_ext/L2) - D2*L1*np.exp(2*a1/L2 + 2*a1/L1) -
+               D2*L1*np.exp(2*a_ext/L2 + 2*a1/L1)) + D2*L1**3*Q*(np.exp(2*a1/L2) +
+               np.exp(2*a_ext/L2))*np.exp(a1/L1)*np.exp(-X1/L1)/(-D1*L2*np.exp(2*a1/L2) + D1*L2*np.exp(2*a_ext/L2) +
+               D1*L2*np.exp(2*a1/L2 + 2*a1/L1) - D1*L2*np.exp(2*a_ext/L2 + 2*a1/L1) - D2*L1*np.exp(2*a1/L2) -
+               D2*L1*np.exp(2*a_ext/L2) - D2*L1*np.exp(2*a1/L2 + 2*a1/L1) - D2*L1*np.exp(2*a_ext/L2 + 2*a1/L1)) + L1**2*Q
+        return u1
 
-        from physicsnemo.sym.domain.constraint import PointwiseConstraint
+    j = 0
+    for Q_val in [0.2, 0.5, 0.7]:
+        u1 = analytical_solution_1(
+                    X1.flatten(), D1, D2, a_ext, Sigma_a1, Sigma_a2, Q_val, a1
+                )
+        validator = PointwiseValidator(
+            nodes=nodes, invar={
+                "x": X1.reshape(-1,1), "Q": np.full((len(X1),1), Q_val),
+            },
+            true_outvar={"u1":u1.reshape(-1,1)}, #potentially u1.reshape(-1, 1)
+            batch_size=128
+        )
+        domain.add_validator(validator, f"validator_1_{j}")
+        j+=1
+
+        # Anchors / midpoints fof u1 (only calcs points at LHS, center/crossover and RHS)
+        x_pts = np.array([0.0, a1/2, a1])
+        u1_pts = analytical_solution_1(x_pts, D1, D2, a_ext, Sigma_a1, Sigma_a2, Q_val, a1)
+        for x_pt, u_pt in zip(x_pts, u1_pts):
+            all_x_u1.append([x_pt])
+            all_Q_u1.append([Q_val])
+            all_u1_vals.append([float(u_pt)])
+
+
+    def analytical_solution_2(X2, D1, D2, a_ext, Sigma_a1, Sigma_a2, Q, a1):
+        Q=Q/D1 # changes for each Q
+        L1 = np.sqrt(D1/Sigma_a1)
+        L2 = np.sqrt(D2/Sigma_a2)
+        u2 = D1*L1**2*L2*Q*(1 - np.exp(2*a1/L1))*np.exp(-X2/L2)*np.exp((a1 + 2*a_ext)/L2)/(-D1*L2*np.exp(2*a1/L2) +
+             D1*L2*np.exp(2*a_ext/L2) + D1*L2*np.exp(2*a1*(1/L2 + 1/L1)) - D1*L2*np.exp(2*a_ext/L2 + 2*a1/L1) -
+             D2*L1*np.exp(2*a1/L2) - D2*L1*np.exp(2*a_ext/L2) - D2*L1*np.exp(2*a1*(1/L2 + 1/L1)) -
+             D2*L1*np.exp(2*a_ext/L2 + 2*a1/L1)) - D1*L1**2*L2*Q*(np.exp(2*a1/L1) - 1)*np.exp(a1/L2)*np.exp(X2/L2)/(D1*L2*np.exp(2*a1/L2) -
+             D1*L2*np.exp(2*a_ext/L2) - D1*L2*np.exp(2*a1/L2 + 2*a1/L1) + D1*L2*np.exp(2*a_ext/L2 + 2*a1/L1) +
+             D2*L1*np.exp(2*a1/L2) + D2*L1*np.exp(2*a_ext/L2) + D2*L1*np.exp(2*a1/L2 + 2*a1/L1) +
+             D2*L1*np.exp(2*a_ext/L2 + 2*a1/L1))
+        return u2
+
+    i = 0
+    for Q_val in [0.2, 0.5, 0.7]:
+        u2 = analytical_solution_2(
+                    X2.flatten(), D1, D2, a_ext, Sigma_a1, Sigma_a2, Q_val, a1
+                )
+
+        validator = PointwiseValidator(
+            nodes=nodes, invar={
+                "x": X2.reshape(-1,1), "Q": np.full((len(X2),1), Q_val)
+            },
+            true_outvar={"u2":u2.reshape(-1,1)}, #potentially u2.reshape(-1, 1)
+            batch_size=128
+        )
+        domain.add_validator(validator, f"validator_2_{i}")
+        i+=1
+
+        x_pts = np.array([a1, (a1 + a_ext)/2, a_ext])
+        u2_pts = analytical_solution_2(x_pts, D1, D2, a_ext, Sigma_a1, Sigma_a2, Q_val, a1)
+        for x_pt, u_pt in zip(x_pts, u2_pts):
+            all_x_u2.append([x_pt])
+            all_Q_u2.append([Q_val])
+            all_u2_vals.append([float(u_pt)])
 
     data_constraint_u1 = PointwiseConstraint.from_numpy(
         nodes=nodes,
-        invar={"x": np.array([[0.0], [a1]])},
-        outvar={"u1": np.array([[23.58668762], [13.83436487]])},
-        batch_size=2,
+        invar={"x": np.array(all_x_u1), "Q": np.array(all_Q_u1)},
+        outvar={"u1": np.array(all_u1_vals)},
+        batch_size=len(all_u1_vals),
     )
 
-# Add constraints at BC?
-    from physicsnemo.sym.domain.constraint import PointwiseConstraint
-    data_constraint_u1 = PointwiseConstraint.from_numpy(
-        nodes=nodes,
-        invar={"x": np.array([[0.0], [a1]])},
-        outvar={"u1": np.array([[23.58668762], [13.83436487]])},
-        batch_size=2,
-    )
     domain.add_constraint(data_constraint_u1, "anchor_u1")
 
     data_constraint_u2 = PointwiseConstraint.from_numpy(
         nodes=nodes,
-        invar={"x": np.array([[a1], [a_ext]])},
-        outvar={"u2": np.array([[13.83436487], [0.0]])},
-        batch_size=2,
+        invar={"x": np.array(all_x_u2), "Q": np.array(all_Q_u2)},
+        outvar={"u2": np.array(all_u2_vals)},
+        batch_size=len(all_u2_vals),
     )
     domain.add_constraint(data_constraint_u2, "anchor_u2")
 
