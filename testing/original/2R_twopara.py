@@ -31,7 +31,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     # make list of nodes to unroll graph on
     ext_lengt_bc = True
     D1 = 1.0
-    Sigma_a1 = 0.01
+    Sigma_a1 = Symbol("Sigma_a1")
     D2 = 0.8
     Sigma_a2 = 0.1
     a1 = 5.0
@@ -50,18 +50,19 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     rb = ReflectiveBoundary(u="u1", D=D1)
 
     param_ranges = {
-        Q: (0.0, 1.0)
+        Q: (0.0, 1.0),
+        Sigma_a1 : (0.0, 0.1)
     }
     pr = Parameterization(param_ranges)
     
     diffusion_net_u1 = instantiate_arch(
-        input_keys=[Key("x"), Key("Q")],
+        input_keys=[Key("x"), Key("Q"), Key("Sigma_a1")],
         output_keys=[Key("u1")],
         cfg=cfg.arch.fully_connected,
     )
 
     diffusion_net_u2 = instantiate_arch(
-        input_keys=[Key("x"), Key("Q")],
+        input_keys=[Key("x"), Key("Q"), Key("Sigma_a1")],
         output_keys=[Key("u2")],
         cfg=cfg.arch.fully_connected,
     )
@@ -144,24 +145,18 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     )
     domain.add_constraint(interior2, "interior2")
 
-
-
-
-
-
+######################################################################################################
     
     # add validation data and analytical solutions
     deltaX = 0.01
     X1 = np.arange(0, a1, deltaX)
     X2 = np.arange(a1, a_ext, deltaX)
-    L1 = np.sqrt(D1/Sigma_a1)
-    L2 = np.sqrt(D2/Sigma_a2)
 
     #Q = Q/D1  #should it change now Q symbolic?
 
     # Midpoint values
-    all_x_u1, all_u1_vals, all_Q_u1 = [], [], []
-    all_x_u2, all_u2_vals, all_Q_u2 = [], [], []
+    all_x_u1, all_u1_vals, all_Q_u1, all_Sigma_a1_u1 = [], [], [], []
+    all_x_u2, all_u2_vals, all_Q_u2, all_Sigma_a1_u2 = [], [], [], []
 
     def analytical_solution_1(X1, D1, D2, a_ext, Sigma_a1, Sigma_a2, Q, a1):
         Q=Q/D1 # changes for each Q
@@ -178,26 +173,28 @@ def run(cfg: PhysicsNeMoConfig) -> None:
 
     j = 0
     for Q_val in [0.2, 0.5, 0.7]:
-        u1 = analytical_solution_1(
-                    X1.flatten(), D1, D2, a_ext, Sigma_a1, Sigma_a2, Q_val, a1
-                )
-        validator = PointwiseValidator(
-            nodes=nodes, invar={
-                "x": X1.reshape(-1,1), "Q": np.full((len(X1),1), Q_val),
-            },
-            true_outvar={"u1":u1.reshape(-1,1)}, #potentially u1.reshape(-1, 1)
-            batch_size=128
-        )
-        domain.add_validator(validator, f"validator_1_{j}")
-        j+=1
+        for Sigma_a1_val in [0.02, 0.05, 0.08]:
+            u1 = analytical_solution_1(
+                        X1.flatten(), D1, D2, a_ext, Sigma_a1_val, Sigma_a2, Q_val, a1
+                    )
+            validator = PointwiseValidator(
+                nodes=nodes, invar={
+                    "x": X1.reshape(-1,1), "Q": np.full((len(X1),1), Q_val), "Sigma_a1": np.full((len(X1),1), Sigma_a1_val)
+                },
+                true_outvar={"u1":u1.reshape(-1,1)}, #potentially u1.reshape(-1, 1)
+                batch_size=128
+            )
+            domain.add_validator(validator, f"validator_1_{j}")
+            j+=1
 
-        # Anchors / midpoints fof u1 (only calcs points at LHS, center/crossover and RHS)
-        x_pts = np.array([0.0, a1/2, a1])
-        u1_pts = analytical_solution_1(x_pts, D1, D2, a_ext, Sigma_a1, Sigma_a2, Q_val, a1)
-        for x_pt, u_pt in zip(x_pts, u1_pts):
-            all_x_u1.append([x_pt])
-            all_Q_u1.append([Q_val])
-            all_u1_vals.append([float(u_pt)])
+            # Anchors / midpoints fof u1 (only calcs points at LHS, center/crossover and RHS)
+            x_pts = np.array([0.0, a1/2, a1])
+            u1_pts = analytical_solution_1(x_pts, D1, D2, a_ext, Sigma_a1_val, Sigma_a2, Q_val, a1)
+            for x_pt, u_pt in zip(x_pts, u1_pts):
+                all_x_u1.append([x_pt])
+                all_Q_u1.append([Q_val])
+                all_Sigma_a1_u1.append([Sigma_a1_val])
+                all_u1_vals.append([float(u_pt)])
 
 
     def analytical_solution_2(X2, D1, D2, a_ext, Sigma_a1, Sigma_a2, Q, a1):
@@ -215,30 +212,32 @@ def run(cfg: PhysicsNeMoConfig) -> None:
 
     i = 0
     for Q_val in [0.2, 0.5, 0.7]:
-        u2 = analytical_solution_2(
-                    X2.flatten(), D1, D2, a_ext, Sigma_a1, Sigma_a2, Q_val, a1
-                )
+        for Sigma_a1_val in [0.02, 0.05, 0.08]:
+            u2 = analytical_solution_2(
+                        X2.flatten(), D1, D2, a_ext, Sigma_a1_val, Sigma_a2, Q_val, a1
+                    )
+    
+            validator = PointwiseValidator(
+                nodes=nodes, invar={
+                    "x": X2.reshape(-1,1), "Q": np.full((len(X2),1), Q_val), "Sigma_a1": np.full((len(X2),1), Sigma_a1_val))
+                },
+                true_outvar={"u2":u2.reshape(-1,1)}, #potentially u2.reshape(-1, 1)
+                batch_size=128
+            )
+            domain.add_validator(validator, f"validator_2_{i}")
+            i+=1
 
-        validator = PointwiseValidator(
-            nodes=nodes, invar={
-                "x": X2.reshape(-1,1), "Q": np.full((len(X2),1), Q_val)
-            },
-            true_outvar={"u2":u2.reshape(-1,1)}, #potentially u2.reshape(-1, 1)
-            batch_size=128
-        )
-        domain.add_validator(validator, f"validator_2_{i}")
-        i+=1
-
-        x_pts = np.array([a1, (a1 + a_ext)/2, a_ext])
-        u2_pts = analytical_solution_2(x_pts, D1, D2, a_ext, Sigma_a1, Sigma_a2, Q_val, a1)
-        for x_pt, u_pt in zip(x_pts, u2_pts):
-            all_x_u2.append([x_pt])
-            all_Q_u2.append([Q_val])
-            all_u2_vals.append([float(u_pt)])
+            x_pts = np.array([a1, (a1 + a_ext)/2, a_ext])
+            u2_pts = analytical_solution_2(x_pts, D1, D2, a_ext, Sigma_a1_val, Sigma_a2, Q_val, a1)
+            for x_pt, u_pt in zip(x_pts, u2_pts):
+                all_x_u2.append([x_pt])
+                all_Q_u2.append([Q_val])
+                all_Sigma_a1_u2.append([Sigma_a1_val])
+                all_u2_vals.append([float(u_pt)])
 
     data_constraint_u1 = PointwiseConstraint.from_numpy(
         nodes=nodes,
-        invar={"x": np.array(all_x_u1), "Q": np.array(all_Q_u1)},
+        invar={"x": np.array(all_x_u1), "Q": np.array(all_Q_u1), "Sigma_a1": np.array(all_Sigma_a1_u1)},
         outvar={"u1": np.array(all_u1_vals)},
         batch_size=len(all_u1_vals),
     )
@@ -247,7 +246,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
 
     data_constraint_u2 = PointwiseConstraint.from_numpy(
         nodes=nodes,
-        invar={"x": np.array(all_x_u2), "Q": np.array(all_Q_u2)},
+        invar={"x": np.array(all_x_u2), "Q": np.array(all_Q_u2), "Sigma_a1": np.array(all_Sigma_a1_u2)},
         outvar={"u2": np.array(all_u2_vals)},
         batch_size=len(all_u2_vals),
     )
