@@ -31,12 +31,12 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     # make list of nodes to unroll graph on
     ext_lengt_bc = True
     D1 = 1.0
-    Sigma_a1 = Symbol("Sigma_a1")
+    Sigma_a1 = Symbol("Sigma_a1") # parametric
     D2 = 0.8
     Sigma_a2 = 0.1
     a1 = 5.0
     a2 = 10.0
-    Q = Symbol("Q")
+    Q = Symbol("Q") # parametric
     if ext_lengt_bc:
         a_ext = a2 + 3 * 0.7104 * D2
     else:
@@ -51,7 +51,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
 
     param_ranges = {
         Q: (0.0, 1.0),
-        Sigma_a1 : (0.0, 0.1)
+        Sigma_a1 : (0.0, 0.1)  #ranges set
     }
     pr = Parameterization(param_ranges)
     
@@ -86,7 +86,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     # make domain
     domain = Domain()
 
-    # boundary condition
+    # boundary conditions
     LB = PointwiseBoundaryConstraint(
         nodes=nodes,
         geometry=geo1,
@@ -154,9 +154,12 @@ def run(cfg: PhysicsNeMoConfig) -> None:
 
     #Q = Q/D1  #should it change now Q symbolic?
 
-    # Midpoint values
+    # Midpoint values to solve at 0, a1/2 and a1 as well as then a1, (a1 + a_ext)/2, a_ext
     all_x_u1, all_u1_vals, all_Q_u1, all_Sigma_a1_u1 = [], [], [], []
     all_x_u2, all_u2_vals, all_Q_u2, all_Sigma_a1_u2 = [], [], [], []
+
+
+    ###### Analytical solutions
 
     def analytical_solution_1(X1, D1, D2, a_ext, Sigma_a1, Sigma_a2, Q, a1):
         Q=Q/D1 # changes for each Q
@@ -172,7 +175,8 @@ def run(cfg: PhysicsNeMoConfig) -> None:
         return u1
 
     j = 0
-    for Q_val in [0.2, 0.5, 0.7]:
+    # Cycle through specified vals for Q and Sigma_a1
+    for Q_val in [0.2, 0.5, 0.7]: 
         for Sigma_a1_val in [0.02, 0.05, 0.08]:
             u1 = analytical_solution_1(
                         X1.flatten(), D1, D2, a_ext, Sigma_a1_val, Sigma_a2, Q_val, a1
@@ -196,6 +200,8 @@ def run(cfg: PhysicsNeMoConfig) -> None:
                 all_Sigma_a1_u1.append([Sigma_a1_val])
                 all_u1_vals.append([float(u_pt)])
 
+
+    # Repeat all for U2 (second reigon analytical solution)
 
     def analytical_solution_2(X2, D1, D2, a_ext, Sigma_a1, Sigma_a2, Q, a1):
         Q=Q/D1 # changes for each Q
