@@ -219,7 +219,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     
             validator = PointwiseValidator(
                 nodes=nodes, invar={
-                    "x": X2.reshape(-1,1), "Q": np.full((len(X2),1), Q_val), "Sigma_a1": np.full((len(X2),1), Sigma_a1_val))
+                    "x": X2.reshape(-1,1), "Q": np.full((len(X2),1), Q_val), "Sigma_a1": np.full((len(X2),1), Sigma_a1_val)
                 },
                 true_outvar={"u2":u2.reshape(-1,1)}, #potentially u2.reshape(-1, 1)
                 batch_size=128
