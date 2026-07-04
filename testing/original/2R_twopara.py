@@ -192,7 +192,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
             j+=1
 
             # Anchors / midpoints fof u1 (only calcs points at LHS, center/crossover and RHS)
-            x_pts = np.array([0.0, a1/2, a1])
+            x_pts = np.array([0.0, a1/4, a1/2, 3*a1/4, a1])
             u1_pts = analytical_solution_1(x_pts, D1, D2, a_ext, Sigma_a1_val, Sigma_a2, Q_val, a1)
             for x_pt, u_pt in zip(x_pts, u1_pts):
                 all_x_u1.append([x_pt])
@@ -233,7 +233,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
             domain.add_validator(validator, f"validator_2_{i}")
             i+=1
 
-            x_pts = np.array([a1, (a1 + a_ext)/2, a_ext])
+            x_pts = np.array([a1, a1 + (a_ext-a1)/3, a1 + 2*(a_ext-a1)/3, a_ext])
             u2_pts = analytical_solution_2(x_pts, D1, D2, a_ext, Sigma_a1_val, Sigma_a2, Q_val, a1)
             for x_pt, u_pt in zip(x_pts, u2_pts):
                 all_x_u2.append([x_pt])
