@@ -92,7 +92,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
         geometry=geo1,
         outvar={"reflective_boundary": 0},
         batch_size=cfg.batch_size.LB,
-        lambda_weighting={"reflective_boundary": 10.0},
+        lambda_weighting={"reflective_boundary": 50.0},
         criteria=Eq(x, 0),
         parameterization=pr
     )
@@ -104,7 +104,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
         outvar={"flux_continuity": 0,
                 "current_continuity": 0},
         batch_size=cfg.batch_size.IB,
-        lambda_weighting={"flux_continuity": 10.0, "current_continuity": 10.0},
+        lambda_weighting={"flux_continuity": 50.0, "current_continuity": 50.0},
         criteria=Eq(x, a1),
         parameterization=pr
     )
@@ -115,7 +115,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
         geometry=geo2,
         outvar={"vacuum_boundary": 0},
         batch_size=cfg.batch_size.RB,
-        lambda_weighting={"vacuum_boundary": 10.0},
+        lambda_weighting={"vacuum_boundary": 50.0},
         criteria=Eq(x, a_ext),
         parameterization=pr
     )
@@ -246,6 +246,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
         invar={"x": np.array(all_x_u1), "Q": np.array(all_Q_u1), "Sigma_a1": np.array(all_Sigma_a1_u1)},
         outvar={"u1": np.array(all_u1_vals)},
         batch_size=len(all_u1_vals),
+        lambda_weighting={"u1": 100.0}
     )
 
     domain.add_constraint(data_constraint_u1, "anchor_u1")
@@ -255,6 +256,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
         invar={"x": np.array(all_x_u2), "Q": np.array(all_Q_u2), "Sigma_a1": np.array(all_Sigma_a1_u2)},
         outvar={"u2": np.array(all_u2_vals)},
         batch_size=len(all_u2_vals),
+        lambda_weighting={"u2": 100.0}
     )
     domain.add_constraint(data_constraint_u2, "anchor_u2")
 
