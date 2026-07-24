@@ -23,7 +23,7 @@ scheduler:
 training:
   rec_results_freq: 10000
   save_network_freq: 10000
-  max_steps : 200000
+  max_steps : 500000
 
 batch_size:
   LB: 100
