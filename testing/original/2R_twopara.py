@@ -24,6 +24,7 @@ from diffusion_equation import DiffusionEquation1D, VacuumBoundary, ReflectiveBo
 from physicsnemo.sym.eq.pdes.diffusion import Diffusion
 from physicsnemo.sym.domain.constraint import PointwiseConstraint
 from physicsnemo.sym.geometry.parameterization import Parameterization
+from scipy.stats import qmc
 
 
 @physicsnemo.sym.main(config_path="conf", config_name="config_dif_rv_2r")
@@ -83,6 +84,21 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     geo1 = Line1D(point_1=0,  point_2=a1)
     geo2 = Line1D(point_1=a1, point_2=a_ext)
 
+    # Introduce LHS sampler (from scipy). Use bounds from x, q, sa etc.
+    def lhs_interior_points(x_bounds, Q_bounds, Sa_bounds, n_points, seed=None):
+        sampler = qmc.LatinHypercube(d=3, seed=seed)
+        unit = sampler.random(n=n_points)
+        lower = np.array([x_bounds[0], Q_bounds[0], Sa_bounds[0]])
+        upper = np.array([x_bounds[1], Q_bounds[1], Sa_bounds[1]])
+        scaled = qmc.scale(unit, lower, upper)
+        return scaled[:, 0:1], scaled[:, 1:2], scaled[:, 2:3]
+
+    n_interior1 = cfg.batch_size.interior1 * 1000  # batch size 1000, maybe change to 2000?
+    x1, Q1, Sa1 = lhs_interior_points((0, a1), (0.0, 1.0), (0.0, 0.1), n_interior1, seed=0)
+
+    n_interior2 = cfg.batch_size.interior2 * 1000
+    x2, Q2, Sa2 = lhs_interior_points((a1, a_ext), (0.0, 1.0), (0.0, 0.1), n_interior2, seed=1)
+
     # make domain
     domain = Domain()
 
@@ -92,7 +108,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
         geometry=geo1,
         outvar={"reflective_boundary": 0},
         batch_size=cfg.batch_size.LB,
-        lambda_weighting={"reflective_boundary": 50.0},
+        lambda_weighting={"reflective_boundary": 10.0},
         criteria=Eq(x, 0),
         parameterization=pr
     )
@@ -104,7 +120,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
         outvar={"flux_continuity": 0,
                 "current_continuity": 0},
         batch_size=cfg.batch_size.IB,
-        lambda_weighting={"flux_continuity": 50.0, "current_continuity": 50.0},
+        lambda_weighting={"flux_continuity": 10.0, "current_continuity": 10.0},
         criteria=Eq(x, a1),
         parameterization=pr
     )
@@ -115,33 +131,27 @@ def run(cfg: PhysicsNeMoConfig) -> None:
         geometry=geo2,
         outvar={"vacuum_boundary": 0},
         batch_size=cfg.batch_size.RB,
-        lambda_weighting={"vacuum_boundary": 50.0},
+        lambda_weighting={"vacuum_boundary": 10.0},
         criteria=Eq(x, a_ext),
         parameterization=pr
     )
     domain.add_constraint(RB, "RB")
 
     # interior 1
-    interior1 = PointwiseInteriorConstraint(
+    interior1 = PointwiseConstraint.from_numpy(
         nodes=nodes,
-        geometry=geo1,
-        outvar={"diffusion_equation_u1": 0},
-        bounds={x: (0, a1)},
+        invar={"x": x1, "Q": Q1, "Sigma_a1": Sa1},
+        outvar={"diffusion_equation_u1": np.zeros_like(x1)},
         batch_size=cfg.batch_size.interior1,
-        quasirandom=True,
-        parameterization=pr
     )
     domain.add_constraint(interior1, "interior1")
 
     # interior 2
-    interior2 = PointwiseInteriorConstraint(
+    interior2 = PointwiseConstraint.from_numpy(
         nodes=nodes,
-        geometry=geo2,
-        outvar={"diffusion_equation_u2": 0},
-        bounds={x: (a1, a_ext)},
+        invar={"x": x2, "Q": Q2, "Sigma_a1": Sa2},
+        outvar={"diffusion_equation_u2": np.zeros_like(x2)},
         batch_size=cfg.batch_size.interior2,
-        quasirandom=True,
-        parameterization=pr
     )
     domain.add_constraint(interior2, "interior2")
 
@@ -192,7 +202,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
             j+=1
 
             # Anchors / midpoints fof u1 (only calcs points at LHS, center/crossover and RHS)
-            x_pts = np.array([0.0, a1/4, a1/2, 3*a1/4, a1])
+            x_pts = np.array([0.0, a1/4, a1/2, 3*a1/4, 7*a1/8, 15*a1/16, a1])
             u1_pts = analytical_solution_1(x_pts, D1, D2, a_ext, Sigma_a1_val, Sigma_a2, Q_val, a1)
             for x_pt, u_pt in zip(x_pts, u1_pts):
                 all_x_u1.append([x_pt])
@@ -245,7 +255,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
         nodes=nodes,
         invar={"x": np.array(all_x_u1), "Q": np.array(all_Q_u1), "Sigma_a1": np.array(all_Sigma_a1_u1)},
         outvar={"u1": np.array(all_u1_vals)},
-        batch_size=min(15, len(all_u1_vals))
+        batch_size=len(all_u1_vals),
     )
 
     domain.add_constraint(data_constraint_u1, "anchor_u1")
@@ -254,7 +264,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
         nodes=nodes,
         invar={"x": np.array(all_x_u2), "Q": np.array(all_Q_u2), "Sigma_a1": np.array(all_Sigma_a1_u2)},
         outvar={"u2": np.array(all_u2_vals)},
-        batch_size=min(15, len(all_u2_vals))
+        batch_size=len(all_u2_vals),
     )
     domain.add_constraint(data_constraint_u2, "anchor_u2")
 
