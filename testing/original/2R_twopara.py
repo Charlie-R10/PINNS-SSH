@@ -202,7 +202,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
             j+=1
 
             # Anchors / midpoints fof u1 (only calcs points at LHS, center/crossover and RHS)
-            x_pts = np.array([0.0, a1/4, a1/2, 3*a1/4, 7*a1/8, 15*a1/16, a1])
+            x_pts = np.array([0.0, a1/4, a1/2, 3*a1/4, a1])
             u1_pts = analytical_solution_1(x_pts, D1, D2, a_ext, Sigma_a1_val, Sigma_a2, Q_val, a1)
             for x_pt, u_pt in zip(x_pts, u1_pts):
                 all_x_u1.append([x_pt])
