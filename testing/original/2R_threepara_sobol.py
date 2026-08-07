@@ -88,7 +88,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     # Changed to SObol sampler (from Scipy). Use bounds from x, q, sa etc.
     def sobol_interior_points(x_bounds, Q_bounds, Sa1_bounds, Sa2_bounds, n_points, seed=None):
         m = int(np.ceil(np.log2(n_points)))
-        sampler = qmc.Sobol(d=4, scramble=True seed=seed) # try with scramble
+        sampler = qmc.Sobol(d=4, scramble=True, seed=seed) # try with scramble
         unit = sampler.random_base2(m=m)[:n_points]
         lower = np.array([x_bounds[0], Q_bounds[0], Sa1_bounds[0], Sa2_bounds[0]])
         upper = np.array([x_bounds[1], Q_bounds[1], Sa1_bounds[1], Sa2_bounds[1]])
