@@ -96,10 +96,10 @@ def run(cfg: PhysicsNeMoConfig) -> None:
         return scaled[:, 0:1], scaled[:, 1:2], scaled[:, 2:3], scaled[:, 3:4]
 
     n_interior1 = cfg.batch_size.interior1 * 1000  # batch size 1000, maybe change to 2000?
-    x1, Q1, Sa1_1, Sa2_1 = lhs_interior_points((0, a1), (0.0, 1.0), (0.0, 0.1), (0.1, 0.5), n_interior1, seed=0)
+    x1, Q1, Sa1_1, Sa2_1 = sobol_interior_points((0, a1), (0.0, 1.0), (0.0, 0.1), (0.1, 0.5), n_interior1, seed=0)
 
     n_interior2 = cfg.batch_size.interior2 * 1000
-    x2, Q2, Sa1_2, Sa2_2 = lhs_interior_points((a1, a_ext), (0.0, 1.0), (0.0, 0.1), (0.1, 0.5), n_interior2, seed=1)
+    x2, Q2, Sa1_2, Sa2_2 = sobol_interior_points((a1, a_ext), (0.0, 1.0), (0.0, 0.1), (0.1, 0.5), n_interior2, seed=1)
 
     # make domain
     domain = Domain()
