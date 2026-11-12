@@ -53,7 +53,7 @@ def run(cfg: PhysicsNeMoConfig) -> None:
     param_ranges = {
         Q: (0.0, 1.0),
         Sigma_a1 : (0.0, 0.1),  #ranges set
-        Sigma_a2 : (0.1, 0.5)
+        Sigma_a2 : (0.1, 0.4)
     }
     pr = Parameterization(param_ranges)
     
